@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import copy
+import asyncio
 import json
 from pathlib import Path
 from typing import Any
 
 import pytest
 
+from app.core.config import Settings
+from app.core.hybrid_manager import HybridRiskManager
+from app.core.llm_engine import LLMRiskAnalyzer
 from app.core.kb_manager import KnowledgeBaseManager, UnknownControlError
 from app.schemas.kb_schema import AssessmentRequest, KnowledgeBaseDocument
 
@@ -153,3 +157,23 @@ def test_rejects_control_not_defined_for_component(
                 ]
             )
         )
+
+
+def test_hybrid_assessment_keeps_static_results_when_llm_is_disabled(
+    manager: KnowledgeBaseManager,
+) -> None:
+    analyzer = LLMRiskAnalyzer(Settings(_env_file=None, llm_api_key=None))
+    hybrid_manager = HybridRiskManager(manager, analyzer)
+    request = AssessmentRequest(
+        architecture=[
+            {"node_type": "Model", "is_public": True, "controls": []}
+        ]
+    )
+
+    response = asyncio.run(hybrid_manager.assess_hybrid_architecture(request))
+    static_response = manager.assess(request)
+
+    assert response.results == static_response.results
+    assert response.overall_risk_score == static_response.overall_risk_score
+    assert response.overall_severity == static_response.overall_severity
+    assert response.risk_matrix_summary == static_response.risk_matrix_summary

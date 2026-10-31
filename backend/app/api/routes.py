@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
 
+from app.core.hybrid_manager import HybridRiskManager
 from app.core.kb_manager import KnowledgeBaseManager
 from app.schemas.kb_schema import (
     AssessmentRequest,
@@ -19,12 +20,19 @@ def get_kb_manager(request: Request) -> KnowledgeBaseManager:
     return manager
 
 
+def get_hybrid_manager(request: Request) -> HybridRiskManager:
+    manager = getattr(request.app.state, "hybrid_manager", None)
+    if not isinstance(manager, HybridRiskManager):
+        raise RuntimeError("The hybrid risk manager is not initialized.")
+    return manager
+
+
 @router.post("/assess", response_model=AssessmentResponse)
-def assess_architecture(
+async def assess_architecture(
     payload: AssessmentRequest,
-    manager: KnowledgeBaseManager = Depends(get_kb_manager),
+    manager: HybridRiskManager = Depends(get_hybrid_manager),
 ) -> AssessmentResponse:
-    return manager.assess(payload)
+    return await manager.assess_hybrid_architecture(payload)
 
 
 @router.get("/components", response_model=ComponentsResponse)

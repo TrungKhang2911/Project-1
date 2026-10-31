@@ -12,7 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routes import router
+from app.core.config import Settings
 from app.core.db_adapter import KnowledgeBaseLoadError, KnowledgeBaseRepository
+from app.core.hybrid_manager import HybridRiskManager
+from app.core.llm_engine import LLMRiskAnalyzer
 from app.core.kb_manager import (
     KnowledgeBaseManager,
     UnknownComponentError,
@@ -34,7 +37,12 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     repository = KnowledgeBaseRepository()
     knowledge_base = repository.get_knowledge_base()
     application.state.kb_repository = repository
-    application.state.kb_manager = KnowledgeBaseManager(knowledge_base)
+    kb_manager = KnowledgeBaseManager(knowledge_base)
+    application.state.kb_manager = kb_manager
+    application.state.hybrid_manager = HybridRiskManager(
+        kb_manager=kb_manager,
+        llm_analyzer=LLMRiskAnalyzer(Settings()),
+    )
     logger.info(
         "Loaded risk knowledge base version %s with %d components",
         knowledge_base.metadata.version,
