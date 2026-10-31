@@ -1,0 +1,317 @@
+{
+"metadata": {
+"version": "2.0.0",
+"project": "AI Service Security Risk Assessment Tool",
+"standards": [
+"OWASP LLM Top 10",
+"OWASP ML Security Top 10",
+"NIST AI RMF 1.0"
+]
+},
+"severity_thresholds": {
+"Low": {
+"min": 1,
+"max": 5,
+"action": "Chấp nhận được, tiếp tục theo dõi và đánh giá định kỳ."
+},
+"Medium": {
+"min": 6,
+"max": 11,
+"action": "Cần áp dụng các biện pháp kiểm soát và bộ lọc cơ bản."
+},
+"High": {
+"min": 12,
+"max": 19,
+"action": "Bắt buộc triển khai biện pháp giảm thiểu kỹ thuật trước khi đưa lên Production."
+},
+"Critical": {
+"min": 20,
+"max": 25,
+"action": "Báo động đỏ! Ngừng triển khai và yêu cầu tái cấu trúc hệ thống ngay lập tức."
+}
+},
+"components": {
+"Model": {
+"display_name": "Model (LLM / Foundation Model)",
+"aliases": ["model", "llm", "foundation model", "genai"],
+"risks": [
+{
+"risk_id": "LLM01",
+"risk_name": "Prompt Injection",
+"nist_mappings": [
+{
+"category_id": "MAP 5.1",
+"description": "Nhận diện khả năng xảy ra và mức độ tác động của các lỗ hổng tiềm tàng."
+},
+{
+"category_id": "MEASURE 2.7",
+"description": "Đánh giá tính an toàn và khả năng chống chịu của mô hình AI."
+}
+],
+"attack_scenario": "Kẻ tấn công chèn chỉ thị độc hại vào đầu vào nhằm vượt qua các rào cản an toàn và chiếm quyền điều khiển luồng phản hồi.",
+"base_likelihood": 4,
+"base_impact": 4,
+"technical_mitigations": [
+{
+"control_id": "CTRL_SYS_PROMPT_SEP",
+"description": "Tách biệt rõ ràng System Prompt và dữ liệu đầu vào của người dùng.",
+"discount_weight": 0.25
+},
+{
+"control_id": "CTRL_GUARDRAILS",
+"description": "Triển khai bộ lọc đầu vào/đầu ra (AI Guardrails) để chặn từ khóa độc hại.",
+"discount_weight": 0.35
+}
+]
+},
+{
+"risk_id": "LLM06",
+"risk_name": "Sensitive Information Disclosure",
+"nist_mappings": [
+{
+"category_id": "MEASURE 2.10",
+"description": "Đánh giá các rủi ro về quyền riêng tư và rò rỉ dữ liệu nhạy cảm."
+}
+],
+"attack_scenario": "Mô hình vô tình tiết lộ thông tin định danh cá nhân (PII) hoặc dữ liệu mật nằm trong tập dữ liệu huấn luyện thông qua phản hồi.",
+"base_likelihood": 3,
+"base_impact": 4,
+"technical_mitigations": [
+{
+"control_id": "CTRL_PII_MASKING",
+"description": "Làm sạch và che giấu dữ liệu nhạy cảm (PII Masking/Sanitization).",
+"discount_weight": 0.45
+}
+]
+}
+]
+},
+"Vector DB": {
+"display_name": "Vector Database (RAG Storage)",
+"aliases": ["vector db", "vectordb", "rag", "embedding store"],
+"risks": [
+{
+"risk_id": "LLM03",
+"risk_name": "Training / RAG Data Poisoning",
+"nist_mappings": [
+{
+"category_id": "MAP 4.1",
+"description": "Lập bản đồ các rủi ro về nguồn gốc và chuỗi cung ứng dữ liệu."
+},
+{
+"category_id": "MEASURE 2.6",
+"description": "Đánh giá tính toàn vẹn và chất lượng của dữ liệu đưa vào hệ thống."
+}
+],
+"attack_scenario": "Kẻ tấn công chèn các tài liệu độc hại hoặc thông tin sai lệch vào kho tri thức Vector, làm sai lệch kết quả truy xuất ngữ nghĩa của RAG.",
+"base_likelihood": 3,
+"base_impact": 5,
+"technical_mitigations": [
+{
+"control_id": "CTRL_VECTOR_RBAC",
+"description": "Kiểm soát truy cập dựa trên vai trò (RBAC) ở cấp độ bản ghi Vector.",
+"discount_weight": 0.35
+},
+{
+"control_id": "CTRL_RAG_VALIDATION",
+"description": "Kiểm duyệt và xác thực tính toàn vẹn của tài liệu trước khi tạo Embedding.",
+"discount_weight": 0.30
+}
+]
+}
+]
+},
+"Agent": {
+"display_name": "AI Agent / Plugin",
+"aliases": ["agent", "ai agent", "plugin", "tool"],
+"risks": [
+{
+"risk_id": "LLM08",
+"risk_name": "Excessive Agency",
+"nist_mappings": [
+{
+"category_id": "GOVERN 1.2",
+"description": "Thiết lập các quy trình phân quyền và giới hạn phạm vi hoạt động của hệ thống."
+},
+{
+"category_id": "MANAGE 2.2",
+"description": "Triển khai các cơ chế kiểm soát và can thiệp của con người."
+}
+],
+"attack_scenario": "Agent được cấp quá nhiều quyền hạn tự động (như thực thi lệnh shell, xóa DB) và bị lợi dụng thông qua Prompt Injection gián tiếp.",
+"base_likelihood": 4,
+"base_impact": 5,
+"technical_mitigations": [
+{
+"control_id": "CTRL_HUMAN_IN_LOOP",
+"description": "Yêu cầu con người phê duyệt (Human-in-the-loop) trước khi thực thi các hành động nhạy cảm.",
+"discount_weight": 0.45
+},
+{
+"control_id": "CTRL_LEAST_PRIVILEGE",
+"description": "Áp dụng nguyên tắc đặc quyền tối thiểu (Least Privilege) cho các API mà Agent gọi.",
+"discount_weight": 0.30
+}
+]
+},
+{
+"risk_id": "LLM07",
+"risk_name": "Insecure Plugin Design",
+"nist_mappings": [
+{
+"category_id": "MEASURE 2.7",
+"description": "Đánh giá bảo mật của các thành phần tích hợp bên thứ ba."
+}
+],
+"attack_scenario": "Plugin không kiểm tra tham số đầu vào từ LLM, dẫn đến các cuộc tấn công SSRF hoặc SQL Injection vào hệ thống nội bộ.",
+"base_likelihood": 4,
+"base_impact": 4,
+"technical_mitigations": [
+{
+"control_id": "CTRL_PLUGIN_ALLOWLIST",
+"description": "Thiết lập danh sách trắng (Allowlist) và xác thực nghiêm ngặt cấu trúc tham số đầu vào của Plugin.",
+"discount_weight": 0.40
+}
+]
+}
+]
+},
+"API Gateway": {
+"display_name": "API Gateway / Endpoint",
+"aliases": ["api gateway", "gateway", "api", "endpoint"],
+"risks": [
+{
+"risk_id": "LLM04",
+"risk_name": "Model Denial of Service (DoS)",
+"nist_mappings": [
+{
+"category_id": "MANAGE 1.3",
+"description": "Lập kế hoạch ứng phó và duy trì tính sẵn sàng của dịch vụ trước các rủi ro."
+}
+],
+"attack_scenario": "Kẻ tấn công gửi hàng loạt truy vấn có độ dài ngữ cảnh cực lớn để làm cạn kiệt tài nguyên GPU/CPU và gây gián đoạn dịch vụ.",
+"base_likelihood": 5,
+"base_impact": 3,
+"technical_mitigations": [
+{
+"control_id": "CTRL_RATE_LIMITING",
+"description": "Giới hạn tần suất gọi API (Rate Limiting) và giới hạn số lượng Token tối đa mỗi truy vấn.",
+"discount_weight": 0.45
+}
+]
+}
+]
+},
+"Data Store": {
+"display_name": "Data Store (SQL / NoSQL / Data Lake)",
+"aliases": ["data store", "database", "db", "sql", "nosql"],
+"risks": [
+{
+"risk_id": "LLM03",
+"risk_name": "Training Data Poisoning",
+"nist_mappings": [
+{
+"category_id": "MAP 4.1",
+"description": "Quản lý rủi ro nguồn dữ liệu đầu vào."
+},
+{
+"category_id": "MEASURE 2.6",
+"description": "Kiểm định tính toàn vẹn của kho lưu trữ dữ liệu."
+}
+],
+"attack_scenario": "Dữ liệu lịch sử hoặc dữ liệu thô trong DB bị thao túng trái phép trước khi được đưa vào pipeline huấn luyện định kỳ (Fine-tuning).",
+"base_likelihood": 3,
+"base_impact": 5,
+"technical_mitigations": [
+{
+"control_id": "CTRL_DATA_HASHING",
+"description": "Sử dụng mã băm (Hashing) hoặc chữ ký số để xác thực tính toàn vẹn của lô dữ liệu huấn luyện.",
+"discount_weight": 0.40
+},
+{
+"control_id": "CTRL_DB_RBAC",
+"description": "Phân quyền truy cập nghiêm ngặt (RBAC) và tách biệt DB vận hành với kho dữ liệu huấn luyện.",
+"discount_weight": 0.30
+}
+]
+}
+]
+},
+"Predictive Model": {
+"display_name": "Predictive ML / CV Model (Học máy truyền thống)",
+"aliases": ["predictive model", "ml", "cv", "machine learning", "computer vision"],
+"risks": [
+{
+"risk_id": "ML01",
+"risk_name": "Adversarial Attack (Evasion)",
+"nist_mappings": [
+{
+"category_id": "MEASURE 2.7",
+"description": "Đo lường khả năng chống chịu của mô hình trước các mẫu dữ liệu nhiễu đối nghịch."
+}
+],
+"attack_scenario": "Kẻ tấn công thêm các nhiễu vi mô (perturbations) vào dữ liệu đầu vào (như hình ảnh, tín hiệu) khiến mô hình phân loại sai hoàn toàn.",
+"base_likelihood": 4,
+"base_impact": 4,
+"technical_mitigations": [
+{
+"control_id": "CTRL_ADVERSARIAL_TRAIN",
+"description": "Huấn luyện đối nghịch (Adversarial Training) bằng cách bổ sung mẫu nhiễu vào tập train.",
+"discount_weight": 0.35
+},
+{
+"control_id": "CTRL_INPUT_DENOISING",
+"description": "Sử dụng bộ lọc khử nhiễu (Input Denoising) trước khi đưa dữ liệu vào mô hình dự đoán.",
+"discount_weight": 0.25
+}
+]
+},
+{
+"risk_id": "ML03",
+"risk_name": "Model Inversion & Membership Inference",
+"nist_mappings": [
+{
+"category_id": "MEASURE 2.10",
+"description": "Bảo vệ quyền riêng tư và chống dịch ngược dữ liệu từ đầu ra của mô hình."
+}
+],
+"attack_scenario": "Khai thác điểm xác suất dự đoán (Confidence Score) trả về từ API để tái tạo lại dữ liệu gốc hoặc suy luận xem một cá nhân có trong tập huấn luyện hay không.",
+"base_likelihood": 3,
+"base_impact": 4,
+"technical_mitigations": [
+{
+"control_id": "CTRL_DIFFERENTIAL_PRIVACY",
+"description": "Áp dụng kỹ thuật Bảo mật vi phân (Differential Privacy) trong quá trình huấn luyện.",
+"discount_weight": 0.40
+},
+{
+"control_id": "CTRL_MASK_CONFIDENCE",
+"description": "Làm tròn hoặc ẩn điểm xác suất chi tiết, chỉ trả về nhãn phân loại cuối cùng.",
+"discount_weight": 0.25
+}
+]
+},
+{
+"risk_id": "ML05",
+"risk_name": "Model Extraction (Stealing)",
+"nist_mappings": [
+{
+"category_id": "MANAGE 2.1",
+"description": "Bảo vệ tài sản trí tuệ và kiến trúc trọng số của mô hình."
+}
+],
+"attack_scenario": "Truy vấn API tự động với số lượng lớn để thu thập cặp Input-Output, từ đó huấn luyện một mô hình bản sao (Shadow Model) ăn cắp chất xám.",
+"base_likelihood": 4,
+"base_impact": 3,
+"technical_mitigations": [
+{
+"control_id": "CTRL_HEURISTIC_DETECTION",
+"description": "Phân tích hành vi truy vấn bất thường để phát hiện và chặn các cuộc tấn công cào dữ liệu.",
+"discount_weight": 0.30
+}
+]
+}
+]
+}
+}
+}

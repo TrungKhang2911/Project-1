@@ -1,0 +1,26 @@
+[
+  {
+    "node_type": "API Gateway",
+    "is_public": true,
+    "controls": [
+      "CTRL_RATE_LIMITING"
+    ]
+  },
+  {
+    "node_type": "Model",
+    "is_public": true,
+    "controls": []
+  },
+  {
+    "node_type": "Vector DB",
+    "is_public": false,
+    "controls": [
+      "CTRL_VECTOR_RBAC"
+    ]
+  },
+  {
+    "node_type": "Agent",
+    "is_public": true,
+    "controls": []
+  }
+]

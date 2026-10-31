@@ -1,0 +1,194 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #172033;
+  background: #f3f6fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+}
+
+button,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 0.45rem;
+  padding: 0.65rem 0.9rem;
+  color: #fff;
+  background: #214e9a;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+select {
+  min-height: 2.5rem;
+  padding: 0.4rem;
+}
+
+.app-shell {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.app-header {
+  margin-bottom: 1.5rem;
+}
+
+.app-header h1,
+.app-header p {
+  margin: 0.25rem 0;
+}
+
+.app-header__eyebrow {
+  color: #385e9d;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.4fr);
+  align-items: start;
+  gap: 1.25rem;
+}
+
+.architecture-input,
+.risk-dashboard {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid #dce3ee;
+  border-radius: 0.8rem;
+  background: #fff;
+  box-shadow: 0 0.4rem 1.4rem rgb(26 47 82 / 5%);
+}
+
+.architecture-input__header,
+.risk-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.architecture-input__header h2,
+.architecture-input__header p {
+  margin: 0.2rem 0;
+}
+
+.architecture-node {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid #dce3ee;
+  border-radius: 0.6rem;
+}
+
+.architecture-node__public,
+.architecture-control {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.architecture-node__public input,
+.architecture-control input {
+  margin-top: 0.2rem;
+}
+
+.architecture-control small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #596579;
+}
+
+.risk-dashboard__summary {
+  padding: 1rem;
+  border: 2px solid;
+  border-radius: 0.6rem;
+  background: #fbfcfe;
+}
+
+.risk-dashboard__summary p {
+  margin: 0.25rem 0;
+}
+
+.risk-matrix {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0.25rem;
+  text-align: center;
+}
+
+.risk-matrix caption {
+  padding: 0.6rem;
+  font-weight: 700;
+}
+
+.risk-matrix th,
+.risk-matrix td {
+  height: 2.5rem;
+  border-radius: 0.25rem;
+}
+
+.risk-matrix td {
+  font-weight: 700;
+}
+
+.risk-dashboard__results {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.risk-card {
+  padding: 1rem;
+  border: 1px solid #dce3ee;
+  border-radius: 0.6rem;
+}
+
+.risk-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.risk-card__severity {
+  flex: 0 0 auto;
+  padding: 0.3rem 0.5rem;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    padding: 1rem;
+  }
+
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+}
