@@ -1,12 +1,15 @@
 import { useState } from "react";
 
+import { UI_STRINGS } from "../agentic/preferences";
 import type { ReportedRisk, RiskReport as RiskReportData, Severity } from "../agentic/riskMap";
 import { SEVERITY_LABELS } from "../agentic/riskMap";
+import type { Language } from "../types";
 
 interface RiskReportProps {
   report: RiskReportData;
   savedId: string | null;
   apiBaseUrl: string;
+  language?: Language;
   onSave: () => Promise<string>;
   onRestart: () => void;
 }
@@ -47,7 +50,15 @@ function SeverityBadge({ severity }: { severity: Severity }): JSX.Element {
   );
 }
 
-function RiskItem({ risk, index }: { risk: ReportedRisk; index: number }): JSX.Element {
+function RiskItem({
+  risk,
+  index,
+  whatToDoLabel,
+}: {
+  risk: ReportedRisk;
+  index: number;
+  whatToDoLabel: string;
+}): JSX.Element {
   return (
     <article
       className="report-risk"
@@ -66,7 +77,7 @@ function RiskItem({ risk, index }: { risk: ReportedRisk; index: number }): JSX.E
       <p>{risk.explanation}</p>
 
       <div className="report-risk__actions">
-        <strong>Bạn nên làm gì?</strong>
+        <strong>{whatToDoLabel}</strong>
         <ul>
           {risk.recommendations.map((recommendation) => (
             <li key={recommendation}>{recommendation}</li>
@@ -89,13 +100,15 @@ export function RiskReport({
   report,
   savedId,
   apiBaseUrl,
+  language = "vi",
   onSave,
   onRestart,
 }: RiskReportProps): JSX.Element {
+  const strings = UI_STRINGS[language];
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const overall = SEVERITY_STYLE[report.overallSeverity];
-  const systemTitle = report.answers.system_name ?? "Ứng dụng AI của bạn";
+  const systemTitle = report.answers.system_name ?? strings.unnamedSystem;
 
   async function handleSave(): Promise<string | null> {
     if (savedId) return savedId;
@@ -127,8 +140,8 @@ export function RiskReport({
     <section className="report" aria-live="polite" aria-labelledby="report-heading">
       <header className="report__header">
         <div>
-          <h2 id="report-heading">Kết quả đánh giá: {systemTitle}</h2>
-          {savedId && <small className="report__saved-tag">Mã hồ sơ đã lưu: #{savedId}</small>}
+          <h2 id="report-heading">{strings.reportHeading(systemTitle)}</h2>
+          {savedId && <small className="report__saved-tag">{strings.savedTag(savedId)}</small>}
         </div>
         <div className="report__toolbar">
           <button
@@ -137,31 +150,31 @@ export function RiskReport({
             onClick={() => void handleSave()}
             disabled={saving || savedId !== null}
           >
-            {savedId ? "✓ Đã lưu" : saving ? "Đang lưu…" : "Lưu kết quả"}
+            {savedId ? strings.savedBtn : saving ? strings.savingBtn : strings.saveBtn}
           </button>
           <button
             type="button"
             className="button-secondary"
             onClick={() => void handleExport("md")}
           >
-            ↓ Xuất Markdown
+            {strings.exportMd}
           </button>
           <button
             type="button"
             className="button-secondary"
             onClick={() => void handleExport("csv")}
           >
-            ↓ Xuất CSV
+            {strings.exportCsv}
           </button>
           <button
             type="button"
             className="button-secondary"
             onClick={() => void handleExport("json")}
           >
-            ↓ Xuất JSON
+            {strings.exportJson}
           </button>
           <button type="button" onClick={onRestart}>
-            Đánh giá mới
+            {strings.newAssessmentBtn}
           </button>
         </div>
       </header>
@@ -169,7 +182,7 @@ export function RiskReport({
       {saveMessage && <p className="report__save-banner">{saveMessage}</p>}
 
       <div className="report__overall" style={{ borderColor: overall.color }}>
-        <p className="report__overall-label">Mức rủi ro chung</p>
+        <p className="report__overall-label">{strings.overallRiskLabel}</p>
         <p className="report__overall-value" style={{ color: overall.color }}>
           <SeverityDot severity={report.overallSeverity} />
           <span>
@@ -195,9 +208,7 @@ export function RiskReport({
       <div className="report__pattern-box">
         <div className="report__pattern-header">
           <div>
-            <span className="report__pattern-eyebrow">
-              Mô hình mẫu tích hợp AI được ghi nhận (Google Cloud Agentic Pattern)
-            </span>
+            <span className="report__pattern-eyebrow">{strings.patternBoxEyebrow}</span>
             <h3>
               {report.primaryPatternInfo.friendlyName}{" "}
               <small>({report.primaryPatternInfo.googleCloudName})</small>
@@ -208,7 +219,7 @@ export function RiskReport({
         <p>{report.primaryPatternInfo.description}</p>
         {report.detectedPatternsInfo.length > 1 && (
           <div className="report__subpatterns">
-            <strong>Các mẫu hình kết hợp trong hệ thống:</strong>
+            <strong>{strings.combinedPatternsLabel}</strong>
             <ul>
               {report.detectedPatternsInfo.map((item) => (
                 <li key={item.code}>
@@ -221,16 +232,16 @@ export function RiskReport({
       </div>
 
       <div className="report__summary">
-        <h3>Mô tả hệ thống &amp; kịch bản vận hành (Đích đánh giá)</h3>
+        <h3>{strings.systemSummaryTitle}</h3>
         <p>{report.summary}</p>
         {report.answers.purpose_details && (
           <p>
-            <strong>Mô tả chi tiết:</strong> {report.answers.purpose_details}
+            <strong>{strings.detailedDescLabel}</strong> {report.answers.purpose_details}
           </p>
         )}
         {report.answers.scenarios && report.answers.scenarios.length > 0 && (
           <div>
-            <strong>Các kịch bản vận hành đã ghi nhận:</strong>
+            <strong>{strings.recordedScenariosLabel}</strong>
             <ol className="report__scenario-list">
               {report.answers.scenarios.map((scenario) => (
                 <li key={scenario}>{scenario}</li>
@@ -243,7 +254,7 @@ export function RiskReport({
 
       {report.topActions.length > 0 && (
         <div className="report__top-actions">
-          <h3>Việc nên làm ngay</h3>
+          <h3>{strings.topActionsTitle}</h3>
           <ol>
             {report.topActions.map((action) => (
               <li key={action}>{action}</li>
@@ -253,14 +264,19 @@ export function RiskReport({
       )}
 
       <div className="report__risks">
-        <h3>Chi tiết từng rủi ro</h3>
+        <h3>{strings.riskDetailsTitle}</h3>
         {report.risks.map((risk, index) => (
-          <RiskItem key={risk.id} risk={risk} index={index} />
+          <RiskItem
+            key={risk.id}
+            risk={risk}
+            index={index}
+            whatToDoLabel={strings.whatToDoLabel}
+          />
         ))}
       </div>
 
       <details className="report__technical">
-        <summary>Thông tin dành cho đội kỹ thuật (OWASP / NIST / Pattern Mapping)</summary>
+        <summary>{strings.techDetailsSummary}</summary>
         <p>
           <strong>Primary pattern:</strong> {report.technical.primaryPattern}
           <br />

@@ -1,18 +1,26 @@
 import { useEffect, useState } from "react";
 
 import {
+  loadPreferences,
+  savePreferences,
+  UI_STRINGS,
+} from "./agentic/preferences";
+import {
   buildRiskReport,
   PATTERN_DISPLAY_INFO,
   type RiskReport as RiskReportData,
 } from "./agentic/riskMap";
 import { AssessmentWizard } from "./components/AssessmentWizard";
+import { DevWorkbench } from "./components/DevWorkbench";
 import { RiskReport } from "./components/RiskReport";
+import { SettingsBar } from "./components/SettingsBar";
 import type {
   ClassificationResponse,
   QuestionnaireAnswers,
   SavedAssessmentCreate,
   SavedAssessmentRecord,
   SavedAssessmentsListResponse,
+  UserPreferences,
 } from "./types";
 
 const API_BASE_URL =
@@ -64,10 +72,19 @@ function toSavePayload(report: RiskReportData): SavedAssessmentCreate {
 }
 
 export function App(): JSX.Element {
+  const [preferences, setPreferences] = useState<UserPreferences>(() => loadPreferences());
   const [report, setReport] = useState<RiskReportData | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [history, setHistory] = useState<SavedAssessmentRecord[]>([]);
   const [wizardKey, setWizardKey] = useState(0);
+
+  const strings = UI_STRINGS[preferences.language];
+  const isDevMode = preferences.mode === "dev";
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", preferences.theme);
+    savePreferences(preferences);
+  }, [preferences]);
 
   async function refreshHistory(): Promise<void> {
     try {
@@ -107,7 +124,6 @@ export function App(): JSX.Element {
     const built = buildRiskReport(detection, answers);
     setReport(built);
     setSavedId(null);
-    // Automatically record the assessment so it can be exported or reopened later.
     try {
       await persistReport(built);
     } catch {
@@ -116,7 +132,18 @@ export function App(): JSX.Element {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  async function handleDevReportGenerated(built: RiskReportData): Promise<void> {
+    setReport(built);
+    setSavedId(null);
+    try {
+      await persistReport(built);
+    } catch {
+      // Offline fallback
+    }
+  }
+
   function openSavedRecord(record: SavedAssessmentRecord): void {
+    setPreferences((prev) => ({ ...prev, mode: "normal" }));
     setReport(buildRiskReport(record.detection, record.answers));
     setSavedId(record.assessment_id);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -142,23 +169,35 @@ export function App(): JSX.Element {
   }
 
   return (
-    <main className="app-shell app-shell--narrow">
+    <main className={`app-shell${isDevMode ? "" : " app-shell--narrow"}`}>
+      <SettingsBar preferences={preferences} onChange={setPreferences} />
+
       <header className="app-header">
-        <p className="app-header__eyebrow">Kiểm tra an toàn hệ thống AI</p>
-        <h1>Ứng dụng AI của bạn có an toàn không?</h1>
-        <p>
-          Mô tả hệ thống và kịch bản sử dụng bằng ngôn ngữ đời thường. Hệ thống sẽ tự động
-          nhận diện mô hình tích hợp AI (theo chuẩn Google Cloud Agentic Patterns), chỉ ra rủi
-          ro và lưu lại kết quả để xuất báo cáo.
+        <p className="app-header__eyebrow">
+          {isDevMode ? strings.eyebrowDev : strings.eyebrowNormal}
         </p>
+        <h1>{isDevMode ? strings.titleDev : strings.titleNormal}</h1>
+        <p>{isDevMode ? strings.subtitleDev : strings.subtitleNormal}</p>
       </header>
-      {report === null ? (
-        <AssessmentWizard key={wizardKey} onSubmit={submitAnswers} />
+
+      {isDevMode ? (
+        <DevWorkbench
+          apiBaseUrl={API_BASE_URL}
+          language={preferences.language}
+          onReportGenerated={handleDevReportGenerated}
+        />
+      ) : report === null ? (
+        <AssessmentWizard
+          key={`${wizardKey}-${preferences.language}`}
+          language={preferences.language}
+          onSubmit={submitAnswers}
+        />
       ) : (
         <RiskReport
           report={report}
           savedId={savedId}
           apiBaseUrl={API_BASE_URL}
+          language={preferences.language}
           onSave={() => persistReport(report)}
           onRestart={restart}
         />
@@ -167,8 +206,8 @@ export function App(): JSX.Element {
       {history.length > 0 && (
         <section className="history-panel" aria-labelledby="history-heading">
           <div className="history-panel__header">
-            <h2 id="history-heading">Lịch sử các lần đánh giá đã lưu ({history.length})</h2>
-            <small>Chọn một bản ghi để xem lại hoặc kết xuất báo cáo (Markdown / CSV / JSON)</small>
+            <h2 id="history-heading">{strings.historyHeading(history.length)}</h2>
+            <small>{strings.historySub}</small>
           </div>
           <ul className="history-list">
             {history.map((item) => {
@@ -181,13 +220,15 @@ export function App(): JSX.Element {
                 >
                   <div className="history-item__info">
                     <strong>
-                      {item.answers.system_name ?? "Ứng dụng AI chưa đặt tên"}{" "}
+                      {item.answers.system_name ?? strings.unnamedSystem}{" "}
                       <span className="pattern-pill">{item.detection.primary_pattern}</span>
                     </strong>
                     <small>
-                      {patternInfo.friendlyName} · Mức rủi ro:{" "}
+                      {patternInfo.friendlyName} ·{" "}
                       <strong>{item.overall_severity_label}</strong> ({item.overall_score}/25) ·{" "}
-                      {new Date(item.created_at).toLocaleString("vi-VN")}
+                      {new Date(item.created_at).toLocaleString(
+                        preferences.language === "en" ? "en-US" : "vi-VN",
+                      )}
                     </small>
                   </div>
                   <div className="history-item__actions">
@@ -196,7 +237,7 @@ export function App(): JSX.Element {
                       className="button-secondary"
                       onClick={() => openSavedRecord(item)}
                     >
-                      Xem lại
+                      {strings.viewRecordBtn}
                     </button>
                     <a
                       className="button-link"
@@ -204,7 +245,7 @@ export function App(): JSX.Element {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Xuất MD
+                      ↓ MD
                     </a>
                     <a
                       className="button-link"
@@ -212,14 +253,14 @@ export function App(): JSX.Element {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Xuất CSV
+                      ↓ CSV
                     </a>
                     <button
                       type="button"
                       className="link-button"
                       onClick={() => void deleteSavedRecord(item.assessment_id)}
                     >
-                      Xoá
+                      {strings.deleteBtn}
                     </button>
                   </div>
                 </li>

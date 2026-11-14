@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 
 import {
+  getWizardSteps,
   MAX_SCENARIOS,
   PURPOSE_DETAILS_MAX,
   SCENARIO_MAX,
   SCENARIO_PRESETS,
   SYSTEM_NAME_MAX,
-  WIZARD_STEPS,
   type ChoiceOption,
   type WizardStep,
 } from "../agentic/questionnaire";
-import type { Purpose, QuestionnaireAnswers } from "../types";
+import { UI_STRINGS } from "../agentic/preferences";
+import type { Language, Purpose, QuestionnaireAnswers } from "../types";
 
 interface AssessmentWizardProps {
+  language?: Language;
   onSubmit: (answers: QuestionnaireAnswers) => Promise<void>;
 }
 
@@ -34,7 +36,6 @@ const EMPTY_DRAFT: Draft = {
   purpose_details: "",
   scenarios: [],
 };
-const REVIEW_STEP = WIZARD_STEPS.length;
 
 function isAnswered(step: WizardStep, draft: Draft, noneChosen: Record<MultiField, boolean>): boolean {
   if (step.kind === "multi") {
@@ -97,7 +98,13 @@ function ChoiceCard({
   );
 }
 
-export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Element {
+export function AssessmentWizard({
+  language = "vi",
+  onSubmit,
+}: AssessmentWizardProps): JSX.Element {
+  const steps = getWizardSteps(language);
+  const strings = UI_STRINGS[language];
+  const reviewStep = steps.length;
   const [stepIndex, setStepIndex] = useState(0);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [scenarioInput, setScenarioInput] = useState("");
@@ -117,7 +124,7 @@ export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Eleme
     previousStep.current = stepIndex;
   }, [stepIndex]);
 
-  const step: WizardStep | undefined = WIZARD_STEPS[stepIndex];
+  const step: WizardStep | undefined = steps[stepIndex];
   const canContinue = step === undefined || isAnswered(step, draft, noneChosen);
 
   function chooseSingle(current: SingleStep, value: string): void {
@@ -186,16 +193,16 @@ export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Eleme
 
     return (
       <div className="wizard__target-box">
-        <h3>Thông tin chi tiết về hệ thống &amp; kịch bản hoạt động (khuyến khích)</h3>
+        <h3>{strings.targetBoxTitle}</h3>
 
         <label className="wizard__details">
-          <span>Tên ứng dụng / hệ thống AI (đích đánh giá)</span>
+          <span>{strings.systemNameLabel}</span>
           <input
             type="text"
             className="wizard__text-input"
             value={draft.system_name}
             maxLength={SYSTEM_NAME_MAX}
-            placeholder="Ví dụ: Trợ lý CSKH tự động đơn hàng Shopee/Website"
+            placeholder={strings.systemNamePlaceholder}
             onChange={(event) =>
               setDraft((previous) => ({ ...previous, system_name: event.target.value }))
             }
@@ -203,31 +210,27 @@ export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Eleme
         </label>
 
         <label className="wizard__details">
-          <span>Mô tả chi tiết hệ thống AI của bạn hoạt động như thế nào?</span>
+          <span>{strings.systemDescLabel}</span>
           <textarea
             value={draft.purpose_details}
             maxLength={PURPOSE_DETAILS_MAX}
             rows={3}
-            placeholder="Ví dụ: Hệ thống tiếp nhận tin nhắn của khách, một AI tra cứu kho và đơn hàng, sau đó AI khác soạn phản hồi hoặc tạo phiếu hoàn tiền."
+            placeholder={strings.systemDescPlaceholder}
             onChange={(event) =>
               setDraft((previous) => ({ ...previous, purpose_details: event.target.value }))
             }
           />
           <small>
-            {draft.purpose_details.length}/{PURPOSE_DETAILS_MAX} ký tự
+            {draft.purpose_details.length}/{PURPOSE_DETAILS_MAX}
           </small>
         </label>
 
         <div className="wizard__scenarios">
-          <span>
-            Các kịch bản tình huống thực tế của hệ thống ({draft.scenarios.length}/{MAX_SCENARIOS})
-          </span>
-          <p className="wizard__helper">
-            Nêu các tình huống cụ thể (ai gửi gì vào, AI xử lý bước nào, tác động ra sao) để AI phân tích chính xác mô hình và rủi ro.
-          </p>
+          <span>{strings.scenariosLabel(draft.scenarios.length, MAX_SCENARIOS)}</span>
+          <p className="wizard__helper">{strings.scenariosHelper}</p>
 
           <div className="wizard__preset-chips">
-            <small>Gợi ý nhanh:</small>
+            <small>{strings.quickPresetLabel}</small>
             {presets.map((preset) => (
               <button
                 key={preset.label}
@@ -247,7 +250,7 @@ export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Eleme
               className="wizard__text-input"
               value={scenarioInput}
               maxLength={SCENARIO_MAX}
-              placeholder="Nhập một kịch bản sử dụng rồi bấm 'Thêm kịch bản'…"
+              placeholder={strings.scenarioInputPlaceholder}
               onChange={(event) => setScenarioInput(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
@@ -262,7 +265,7 @@ export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Eleme
               disabled={!scenarioInput.trim() || draft.scenarios.length >= MAX_SCENARIOS}
               onClick={() => addScenario(scenarioInput)}
             >
-              Thêm kịch bản
+              {strings.addScenarioBtn}
             </button>
           </div>
 
@@ -271,15 +274,15 @@ export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Eleme
               {draft.scenarios.map((scenario, idx) => (
                 <li key={scenario}>
                   <span>
-                    <strong>Kịch bản {idx + 1}:</strong> {scenario}
+                    <strong>{strings.scenarioItemPrefix(idx + 1)}:</strong> {scenario}
                   </span>
                   <button
                     type="button"
                     className="link-button"
                     onClick={() => removeScenario(idx)}
-                    aria-label={`Xoá kịch bản ${idx + 1}`}
+                    aria-label={`${strings.deleteBtn} ${idx + 1}`}
                   >
-                    Xoá
+                    {strings.deleteBtn}
                   </button>
                 </li>
               ))}
@@ -351,17 +354,17 @@ export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Eleme
     return current.options.find((option) => option.value === value)?.label ?? "Chưa trả lời";
   }
 
-  const progress = Math.round((Math.min(stepIndex, REVIEW_STEP) / REVIEW_STEP) * 100);
+  const progress = Math.round((Math.min(stepIndex, reviewStep) / reviewStep) * 100);
 
   return (
     <section className="wizard" aria-labelledby="wizard-heading">
       <div className="wizard__progress">
         <div className="wizard__progress-header">
           <span>
-            {step ? `Bước ${stepIndex + 1} / ${WIZARD_STEPS.length}` : "Bước cuối · Xem lại thông tin"}
+            {step ? strings.stepCounter(stepIndex + 1, steps.length) : strings.reviewTitle}
           </span>
           <div className="wizard__steps-dots" aria-hidden="true">
-            {WIZARD_STEPS.map((item, idx) => {
+            {steps.map((item, idx) => {
               const done = idx < stepIndex;
               const current = idx === stepIndex;
               return (
@@ -397,16 +400,16 @@ export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Eleme
       ) : (
         <div className="wizard__step animate-step" key="review">
           <h2 id="wizard-heading" ref={headingRef} tabIndex={-1}>
-            Kiểm tra lại thông tin hệ thống trước khi phân tích
+            {strings.reviewHeading}
           </h2>
           <dl className="wizard__review">
             {draft.system_name.trim() && (
               <div>
-                <dt>Tên hệ thống AI (đích đánh giá)</dt>
+                <dt>{strings.systemNameLabel}</dt>
                 <dd>{draft.system_name.trim()}</dd>
               </div>
             )}
-            {WIZARD_STEPS.map((item, index) => (
+            {steps.map((item, index) => (
               <div key={item.id}>
                 <dt>{item.title}</dt>
                 <dd>
@@ -415,14 +418,14 @@ export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Eleme
                     <em> — {draft.purpose_details.trim()}</em>
                   )}
                   <button type="button" className="link-button" onClick={() => setStepIndex(index)}>
-                    Sửa
+                    {strings.editBtn}
                   </button>
                 </dd>
                 {item.field === "purpose" && draft.scenarios.length > 0 && (
                   <ul className="wizard__review-scenarios">
                     {draft.scenarios.map((scenario, idx) => (
                       <li key={scenario}>
-                        Kịch bản {idx + 1}: {scenario}
+                        {strings.scenarioItemPrefix(idx + 1)}: {scenario}
                       </li>
                     ))}
                   </ul>
@@ -446,7 +449,7 @@ export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Eleme
           onClick={() => setStepIndex((index) => Math.max(0, index - 1))}
           disabled={stepIndex === 0 || submitting}
         >
-          Quay lại
+          {strings.backBtn}
         </button>
         {step ? (
           <button
@@ -454,17 +457,17 @@ export function AssessmentWizard({ onSubmit }: AssessmentWizardProps): JSX.Eleme
             onClick={() => setStepIndex((index) => index + 1)}
             disabled={!canContinue}
           >
-            Tiếp tục →
+            {strings.nextBtn}
           </button>
         ) : (
           <button type="button" onClick={() => void submit()} disabled={submitting}>
             {submitting ? (
               <span className="button-loading">
                 <span className="spinner-dot" aria-hidden="true" />
-                Đang phân tích…
+                {strings.submittingBtn}
               </span>
             ) : (
-              "Xem đánh giá rủi ro →"
+              strings.submitBtn
             )}
           </button>
         )}

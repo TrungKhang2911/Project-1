@@ -1,11 +1,13 @@
 /**
- * Plain-language questionnaire. Option values match the backend enums in
- * backend/app/schemas/agentic_schema.py; labels never use technical terms.
+ * Plain-language questionnaire (bilingual VI / EN). Option values match the
+ * backend enums in backend/app/schemas/agentic_schema.py; labels never use
+ * technical jargon in Normal Mode.
  */
 import type {
   Audience,
   Autonomy,
   Collaboration,
+  Language,
   Purpose,
   QuestionnaireAnswers,
   Resource,
@@ -272,3 +274,164 @@ export const WIZARD_STEPS: WizardStep[] = [
   },
 ];
 
+export const WIZARD_STEPS_EN: WizardStep[] = [
+  {
+    id: "purpose",
+    kind: "single",
+    field: "purpose",
+    title: "What is the primary task of your AI application?",
+    helper: "Pick the closest match. You can provide detailed descriptions and scenarios below.",
+    options: [
+      { value: "customer_support", icon: "01", label: "Customer support & Q&A" },
+      { value: "content", icon: "02", label: "Writing, translation, or summarization" },
+      { value: "data_analysis", icon: "03", label: "Data analysis & reporting" },
+      {
+        value: "task_automation",
+        icon: "04",
+        label: "Automated task execution",
+        hint: "e.g., sending emails, scheduling, placing orders",
+      },
+      { value: "coding", icon: "05", label: "Software engineering & coding assistant" },
+      { value: "other", icon: "06", label: "Other workflow" },
+    ],
+  },
+  {
+    id: "collaboration",
+    kind: "single",
+    field: "collaboration",
+    title: "Does the AI work alone, or do multiple AIs share the workload?",
+    helper: "Think of the application like a team of staff members.",
+    options: [
+      { value: "alone", icon: "●", label: "Works alone", hint: "A single AI handles the entire task" },
+      {
+        value: "pipeline",
+        icon: "→",
+        label: "Step-by-step pipeline",
+        hint: "One AI finishes its step and passes the output to the next AI",
+      },
+      {
+        value: "parallel",
+        icon: "⇉",
+        label: "Parallel then merged",
+        hint: "Multiple AIs work on sub-tasks simultaneously, then merge results",
+      },
+      {
+        value: "manager",
+        icon: "◈",
+        label: "Lead AI delegates tasks",
+        hint: "A central coordinator AI analyzes requests and routes tasks to specialist AIs",
+      },
+      {
+        value: "team_chat",
+        icon: "◎",
+        label: "Peer AIs collaborate freely",
+        hint: "No single leader; peer AIs converse and hand off work to converge on a result",
+      },
+      { value: "unsure", icon: "?", label: "I am not sure" },
+    ],
+  },
+  {
+    id: "autonomy",
+    kind: "single",
+    field: "autonomy",
+    title: "Does the AI execute actions automatically, or wait for human approval?",
+    helper: "Actions mean real-world effects: sending emails, purchasing, modifying databases…",
+    options: [
+      {
+        value: "answer_only",
+        icon: "○",
+        label: "Answers or suggestions only",
+        hint: "The AI never executes actions on its own",
+      },
+      {
+        value: "approval_required",
+        icon: "✓",
+        label: "Always waits for human approval",
+        hint: "The AI prepares the action, but a person must click 'Approve'",
+      },
+      {
+        value: "partial_auto",
+        icon: "◐",
+        label: "Auto for minor tasks, asks for critical ones",
+        hint: "e.g., auto-replies to routine queries, asks before transferring money",
+      },
+      {
+        value: "full_auto",
+        icon: "⚡",
+        label: "Fully autonomous without asking",
+      },
+    ],
+  },
+  {
+    id: "resources",
+    kind: "multi",
+    field: "resources",
+    title: "Does it search internal company documents or call external tools?",
+    helper: "Select all resources the AI is connected to.",
+    noneLabel: "None — uses built-in model knowledge only",
+    options: [
+      {
+        value: "internal_docs",
+        icon: "▤",
+        label: "Internal document retrieval",
+        hint: "Policies, SOPs, contracts, internal knowledge base…",
+      },
+      { value: "web_search", icon: "⊕", label: "Live web search" },
+      {
+        value: "external_tools",
+        icon: "⌘",
+        label: "External services & APIs",
+        hint: "Email, calendar, payment gateways, third-party tools…",
+      },
+      {
+        value: "company_data",
+        icon: "▥",
+        label: "Read/write company databases",
+        hint: "Customer records, orders, inventory, ERP/CRM…",
+      },
+    ],
+  },
+  {
+    id: "audience",
+    kind: "single",
+    field: "audience",
+    title: "Who can access and interact with this application?",
+    helper: "Helps estimate exposure to untrusted or adversarial users.",
+    options: [
+      { value: "internal", icon: "▣", label: "Internal employees only" },
+      { value: "public", icon: "◎", label: "External customers or anyone on the Internet" },
+    ],
+  },
+  {
+    id: "sensitive_data",
+    kind: "multi",
+    field: "sensitive_data",
+    title: "Does the AI process or have access to sensitive data?",
+    helper: "Select all categories that apply.",
+    noneLabel: "No sensitive data",
+    options: [
+      {
+        value: "personal",
+        icon: "◈",
+        label: "Personal Identifiable Information (PII)",
+        hint: "Names, phone numbers, addresses, national IDs…",
+      },
+      {
+        value: "financial",
+        icon: "◇",
+        label: "Financial & payment data",
+        hint: "Bank accounts, cards, billing, transactions…",
+      },
+      {
+        value: "confidential",
+        icon: "▪",
+        label: "Confidential business secrets",
+        hint: "Pricing strategy, source code, private contracts…",
+      },
+    ],
+  },
+];
+
+export function getWizardSteps(language: Language): WizardStep[] {
+  return language === "en" ? WIZARD_STEPS_EN : WIZARD_STEPS;
+}

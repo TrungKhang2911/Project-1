@@ -150,3 +150,32 @@ export interface SavedAssessmentRecord extends SavedAssessmentCreate {
 export interface SavedAssessmentsListResponse {
   records: SavedAssessmentRecord[];
 }
+
+/* ------------------------------------------------------------------ */
+/* User Preferences & Customization Settings                           */
+/* ------------------------------------------------------------------ */
+
+export type ThemeMode = "light" | "dark";
+export type Language = "vi" | "en";
+export type AppMode = "normal" | "dev";
+
+export interface UserPreferences {
+  theme: ThemeMode;
+  language: Language;
+  mode: AppMode;
+}
+
+export interface DevPatternAssessmentInput {
+  system_name: string;
+  architecture_description: string;
+  scenarios: string[];
+  primary_pattern: Exclude<AgenticPattern, "HUMAN_IN_THE_LOOP">;
+  secondary_patterns: AgenticPattern[];
+  human_oversight: HumanOversight;
+  audience: Audience;
+  resources: Resource[];
+  sensitive_data: SensitiveData[];
+  selected_owasp_scopes: string[];
+  selected_nist_functions: Array<"GOVERN" | "MAP" | "MEASURE" | "MANAGE">;
+  applied_mitigation_weights: number;
+}

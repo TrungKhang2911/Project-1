@@ -35,6 +35,88 @@ type Level = 1 | 2 | 3 | 4 | 5;
  */
 export type RiskKind = "injection" | "action" | "leak" | "integrity" | "control" | "cost";
 
+export interface TechnicalControlSpec {
+  id: string;
+  name: string;
+  description: string;
+  weight: number;
+}
+
+export const TECHNICAL_CONTROLS: Record<string, TechnicalControlSpec> = {
+  CTRL_SYS_PROMPT_SEP: {
+    id: "CTRL_SYS_PROMPT_SEP",
+    name: "System Prompt & Untrusted Data Delimitation",
+    description: "Tách biệt nghiêm ngặt system instructions và dữ liệu đầu vào bằng cấu trúc phân cách / role isolation.",
+    weight: 0.25,
+  },
+  CTRL_GUARDRAILS: {
+    id: "CTRL_GUARDRAILS",
+    name: "Input / Output Semantic Guardrails",
+    description: "Bộ lọc phát hiện prompt injection, nội dung độc hại và kiểm duyệt đầu ra trước khi trả về.",
+    weight: 0.35,
+  },
+  CTRL_TOOL_ALLOWLIST: {
+    id: "CTRL_TOOL_ALLOWLIST",
+    name: "Least-Privilege Tool Allowlist & Schema Validation",
+    description: "Giới hạn danh sách hàm/công cụ tối thiểu cho từng agent kèm kiểm tra chặt tham số JSON Schema.",
+    weight: 0.35,
+  },
+  CTRL_STEP_BUDGET: {
+    id: "CTRL_STEP_BUDGET",
+    name: "Execution Step Cap & Token/Cost Quota",
+    description: "Giới hạn số vòng lặp suy luận (max_iterations), timeout và hạn mức chi phí cho mỗi phiên.",
+    weight: 0.40,
+  },
+  CTRL_INTER_AGENT_VALIDATION: {
+    id: "CTRL_INTER_AGENT_VALIDATION",
+    name: "Inter-Agent Message Schema & Sanitization",
+    description: "Xác thực định dạng và làm sạch dữ liệu trung gian khi truyền thông điệp giữa các agent.",
+    weight: 0.35,
+  },
+  CTRL_CONTEXT_ISOLATION: {
+    id: "CTRL_CONTEXT_ISOLATION",
+    name: "Per-Task Ephemeral Memory & Context Isolation",
+    description: "Cô lập bộ nhớ ngữ cảnh giữa các luồng/tác vụ song song và giữa các phiên người dùng.",
+    weight: 0.40,
+  },
+  CTRL_SCOPED_DELEGATION: {
+    id: "CTRL_SCOPED_DELEGATION",
+    name: "Cryptographic Scoped Token Delegation",
+    description: "Mỗi sub-agent tự xác thực quyền tối thiểu theo token phạm vi hẹp, chống leo thang đặc quyền (Confused Deputy).",
+    weight: 0.40,
+  },
+  CTRL_DETERMINISTIC_ROUTER: {
+    id: "CTRL_DETERMINISTIC_ROUTER",
+    name: "Deterministic Guardrail Checkpoint on Routing",
+    description: "Khóa luồng điều phối qua cổng kiểm tra cố định không thể bị ghi đè bởi LLM.",
+    weight: 0.35,
+  },
+  CTRL_IMMUTABLE_TRACE_LOG: {
+    id: "CTRL_IMMUTABLE_TRACE_LOG",
+    name: "Immutable Multi-Agent Telemetry & Audit Trail",
+    description: "Ghi nhật ký bất biến toàn bộ chuỗi suy luận, lời gọi công cụ và giao tiếp liên-agent.",
+    weight: 0.35,
+  },
+  CTRL_RAG_INGEST_FILTER: {
+    id: "CTRL_RAG_INGEST_FILTER",
+    name: "Corpus Ingestion Sanitization & Provenance Signing",
+    description: "Quét mã độc/indirect injection và xác thực nguồn gốc tài liệu trước khi đưa vào Vector DB.",
+    weight: 0.35,
+  },
+  CTRL_RAG_ACL: {
+    id: "CTRL_RAG_ACL",
+    name: "Document-Level ACL Enforcement on Vector Retrieval",
+    description: "Áp dụng kiểm soát truy cập theo đúng định danh người dùng ngay tại bước truy vấn RAG.",
+    weight: 0.45,
+  },
+  CTRL_DLP_REDACTION: {
+    id: "CTRL_DLP_REDACTION",
+    name: "PII/PCI Redaction & Read-Only DB Views",
+    description: "Che dấu dữ liệu nhạy cảm (DLP masking) và ưu tiên kết nối cơ sở dữ liệu ở chế độ chỉ đọc.",
+    weight: 0.40,
+  },
+};
+
 export interface RiskTemplate {
   id: string;
   kind: RiskKind;
@@ -49,7 +131,13 @@ export interface RiskTemplate {
   /** Raise likelihood by 1 when the app also reads any of these sources. */
   boostWhenResources?: Resource[];
   /** For engineers only. */
-  technical: { name: string; references: string[] };
+  technical: {
+    name: string;
+    owasp: string[];
+    nist: string[];
+    references: string[];
+    mitigationControlIds: string[];
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -72,7 +160,10 @@ const RISKS = {
     ],
     technical: {
       name: "Direct prompt injection",
+      owasp: ["OWASP LLM01:2025 Prompt Injection", "OWASP LLM07:2025 System Prompt Leakage"],
+      nist: ["MAP 5.1", "MEASURE 2.7", "MANAGE 2.2"],
       references: ["OWASP LLM01:2025 Prompt Injection", "OWASP LLM07:2025 System Prompt Leakage"],
+      mitigationControlIds: ["CTRL_SYS_PROMPT_SEP", "CTRL_GUARDRAILS"],
     },
   },
   TOOL_HIJACK: {
@@ -91,7 +182,10 @@ const RISKS = {
     boostWhenResources: ["web_search", "internal_docs"],
     technical: {
       name: "Prompt injection leading to unauthorized tool use (ReAct loop)",
+      owasp: ["OWASP LLM01:2025 Prompt Injection", "OWASP LLM06:2025 Excessive Agency"],
+      nist: ["MAP 3.5", "MEASURE 2.6", "MANAGE 2.4"],
       references: ["OWASP LLM01:2025 Prompt Injection", "OWASP LLM06:2025 Excessive Agency"],
+      mitigationControlIds: ["CTRL_TOOL_ALLOWLIST", "CTRL_GUARDRAILS", "CTRL_SYS_PROMPT_SEP"],
     },
   },
   RUNAWAY_LOOP: {
@@ -108,7 +202,10 @@ const RISKS = {
     ],
     technical: {
       name: "Unbounded agent loop / resource exhaustion",
+      owasp: ["OWASP LLM10:2025 Unbounded Consumption"],
+      nist: ["MEASURE 2.5", "MANAGE 2.3"],
       references: ["OWASP LLM10:2025 Unbounded Consumption"],
+      mitigationControlIds: ["CTRL_STEP_BUDGET"],
     },
   },
   CASCADING_POISONING: {
@@ -127,7 +224,10 @@ const RISKS = {
     boostWhenResources: ["internal_docs", "web_search"],
     technical: {
       name: "Cascading poisoning across sequential agents",
+      owasp: ["OWASP LLM01:2025 Prompt Injection (Indirect)", "OWASP LLM04:2025 Data and Model Poisoning"],
+      nist: ["MAP 4.1", "MEASURE 2.7", "MANAGE 3.1"],
       references: ["OWASP LLM01:2025 Prompt Injection (indirect)", "OWASP LLM04:2025 Data and Model Poisoning"],
+      mitigationControlIds: ["CTRL_INTER_AGENT_VALIDATION", "CTRL_RAG_INGEST_FILTER", "CTRL_IMMUTABLE_TRACE_LOG"],
     },
   },
   CROSS_TASK_LEAK: {
@@ -144,7 +244,10 @@ const RISKS = {
     ],
     technical: {
       name: "Information leakage between parallel sub-tasks (shared context)",
+      owasp: ["OWASP LLM02:2025 Sensitive Information Disclosure"],
+      nist: ["MAP 2.3", "MEASURE 2.10", "MANAGE 2.1"],
       references: ["OWASP LLM02:2025 Sensitive Information Disclosure"],
+      mitigationControlIds: ["CTRL_CONTEXT_ISOLATION", "CTRL_DLP_REDACTION"],
     },
   },
   MERGE_CORRUPTION: {
@@ -158,7 +261,10 @@ const RISKS = {
     recommendations: ["So sánh chéo kết quả giữa các AI và cảnh báo khi chúng mâu thuẫn nhau."],
     technical: {
       name: "Aggregation integrity in parallel fan-in",
+      owasp: ["OWASP LLM09:2025 Misinformation"],
+      nist: ["MEASURE 2.5", "MANAGE 2.2"],
       references: ["OWASP LLM09:2025 Misinformation"],
+      mitigationControlIds: ["CTRL_INTER_AGENT_VALIDATION"],
     },
   },
   CROSS_AGENT_CONTAMINATION: {
@@ -176,7 +282,10 @@ const RISKS = {
     ],
     technical: {
       name: "Inter-agent prompt injection propagation",
+      owasp: ["OWASP LLM01:2025 Prompt Injection", "OWASP Agentic AI: Agent Communication Poisoning"],
+      nist: ["GOVERN 1.2", "MAP 5.1", "MANAGE 2.4"],
       references: ["OWASP LLM01:2025 Prompt Injection", "OWASP Agentic AI: Agent Communication Poisoning"],
+      mitigationControlIds: ["CTRL_INTER_AGENT_VALIDATION", "CTRL_SCOPED_DELEGATION"],
     },
   },
   PRIVILEGE_ESCALATION: {
@@ -194,7 +303,10 @@ const RISKS = {
     ],
     technical: {
       name: "Privilege escalation via delegation (confused deputy)",
+      owasp: ["OWASP LLM06:2025 Excessive Agency", "OWASP Agentic AI: Privilege Compromise"],
+      nist: ["GOVERN 1.4", "MAP 3.5", "MANAGE 2.4"],
       references: ["OWASP LLM06:2025 Excessive Agency", "OWASP Agentic AI: Privilege Compromise"],
+      mitigationControlIds: ["CTRL_SCOPED_DELEGATION", "CTRL_TOOL_ALLOWLIST"],
     },
   },
   ROUTING_BYPASS: {
@@ -211,7 +323,10 @@ const RISKS = {
     ],
     technical: {
       name: "Routing manipulation / guardrail bypass in coordinator",
+      owasp: ["OWASP LLM01:2025 Prompt Injection", "OWASP LLM06:2025 Excessive Agency"],
+      nist: ["MAP 5.2", "MEASURE 2.7", "MANAGE 2.2"],
       references: ["OWASP LLM01:2025 Prompt Injection", "OWASP LLM06:2025 Excessive Agency"],
+      mitigationControlIds: ["CTRL_DETERMINISTIC_ROUTER", "CTRL_GUARDRAILS"],
     },
   },
   ACCOUNTABILITY_GAP: {
@@ -228,7 +343,10 @@ const RISKS = {
     ],
     technical: {
       name: "Non-deterministic emergent behaviour / weak auditability in swarm",
+      owasp: ["OWASP Agentic AI: Repudiation & Untraceability"],
+      nist: ["GOVERN 1.4", "MEASURE 2.8", "MANAGE 4.1"],
       references: ["NIST AI RMF GOVERN 1.4", "OWASP Agentic AI: Repudiation & Untraceability"],
+      mitigationControlIds: ["CTRL_IMMUTABLE_TRACE_LOG", "CTRL_STEP_BUDGET"],
     },
   },
   APPROVAL_FATIGUE: {
@@ -245,7 +363,10 @@ const RISKS = {
     ],
     technical: {
       name: "Human-in-the-loop approval fatigue",
+      owasp: ["OWASP LLM09:2025 Misinformation (Overreliance)", "OWASP Agentic AI: Overwhelming HITL"],
+      nist: ["GOVERN 3.2", "MAP 3.4", "MANAGE 2.4"],
       references: ["OWASP LLM09:2025 Misinformation (overreliance)", "OWASP Agentic AI: Overwhelming Human-in-the-Loop"],
+      mitigationControlIds: ["CTRL_DETERMINISTIC_ROUTER"],
     },
   },
   MISINFORMATION: {
@@ -262,7 +383,10 @@ const RISKS = {
     ],
     technical: {
       name: "Hallucination / overreliance",
+      owasp: ["OWASP LLM09:2025 Misinformation"],
+      nist: ["MEASURE 2.5", "MANAGE 2.2"],
       references: ["OWASP LLM09:2025 Misinformation"],
+      mitigationControlIds: ["CTRL_GUARDRAILS"],
     },
   },
   POISONED_DOCS: {
@@ -279,11 +403,18 @@ const RISKS = {
     ],
     technical: {
       name: "Indirect prompt injection / poisoning via retrieval corpus",
+      owasp: [
+        "OWASP LLM01:2025 Prompt Injection (Indirect)",
+        "OWASP LLM04:2025 Data and Model Poisoning",
+        "OWASP LLM08:2025 Vector and Embedding Weaknesses",
+      ],
+      nist: ["MAP 4.1", "MEASURE 2.7", "MANAGE 3.2"],
       references: [
         "OWASP LLM01:2025 Prompt Injection (indirect)",
         "OWASP LLM04:2025 Data and Model Poisoning",
         "OWASP LLM08:2025 Vector and Embedding Weaknesses",
       ],
+      mitigationControlIds: ["CTRL_RAG_INGEST_FILTER", "CTRL_SYS_PROMPT_SEP"],
     },
   },
   DOC_ACCESS_LEAK: {
@@ -300,7 +431,10 @@ const RISKS = {
     ],
     technical: {
       name: "Missing per-user authorization on retrieval",
+      owasp: ["OWASP LLM02:2025 Sensitive Information Disclosure", "OWASP LLM08:2025 Vector and Embedding Weaknesses"],
+      nist: ["MAP 2.3", "MEASURE 2.10", "MANAGE 2.1"],
       references: ["OWASP LLM02:2025 Sensitive Information Disclosure", "OWASP LLM08:2025 Vector and Embedding Weaknesses"],
+      mitigationControlIds: ["CTRL_RAG_ACL", "CTRL_DLP_REDACTION"],
     },
   },
   MALICIOUS_WEB: {
@@ -317,7 +451,10 @@ const RISKS = {
     ],
     technical: {
       name: "Indirect prompt injection via web content",
+      owasp: ["OWASP LLM01:2025 Prompt Injection (Indirect)"],
+      nist: ["MAP 4.1", "MEASURE 2.7", "MANAGE 3.1"],
       references: ["OWASP LLM01:2025 Prompt Injection (indirect)"],
+      mitigationControlIds: ["CTRL_SYS_PROMPT_SEP", "CTRL_GUARDRAILS"],
     },
   },
   EXCESSIVE_AGENCY: {
@@ -335,7 +472,10 @@ const RISKS = {
     ],
     technical: {
       name: "Excessive functionality / permissions on connected tools",
+      owasp: ["OWASP LLM06:2025 Excessive Agency"],
+      nist: ["GOVERN 1.4", "MAP 3.5", "MANAGE 2.4"],
       references: ["OWASP LLM06:2025 Excessive Agency"],
+      mitigationControlIds: ["CTRL_TOOL_ALLOWLIST", "CTRL_SCOPED_DELEGATION"],
     },
   },
   CUSTOMER_DATA_LEAK: {
@@ -353,7 +493,10 @@ const RISKS = {
     ],
     technical: {
       name: "Sensitive data exposure through data-connected agent",
+      owasp: ["OWASP LLM02:2025 Sensitive Information Disclosure", "OWASP LLM06:2025 Excessive Agency"],
+      nist: ["MAP 2.3", "MEASURE 2.10", "MANAGE 2.1"],
       references: ["OWASP LLM02:2025 Sensitive Information Disclosure", "OWASP LLM06:2025 Excessive Agency"],
+      mitigationControlIds: ["CTRL_DLP_REDACTION", "CTRL_IMMUTABLE_TRACE_LOG"],
     },
   },
 } satisfies Record<string, RiskTemplate>;
@@ -572,9 +715,18 @@ export interface ReportedRisk {
   adjustments: string[];
   technical: {
     name: string;
+    owasp: string[];
+    nist: string[];
     references: string[];
     triggeredBy: string[];
+    baseLikelihood: Level;
+    contextLikelihood: Level;
+    baseImpact: Level;
     baseScore: number;
+    mitigationControlIds: string[];
+    appliedControlIds: string[];
+    missingControlIds: string[];
+    discountWeight: number;
   };
 }
 
@@ -610,6 +762,7 @@ const OVERSIGHT_NOTES: Record<PatternDetection["human_oversight"], string> = {
 export function buildRiskReport(
   detection: PatternDetection,
   answers: QuestionnaireAnswers,
+  activeControls: string[] = [],
 ): RiskReport {
   // Collect templates and remember which pattern/resource introduced each one.
   const collected = new Map<string, { template: RiskTemplate; triggeredBy: Set<string> }>();
@@ -629,16 +782,36 @@ export function buildRiskReport(
   }
   add(BASELINE_RISKS, "baseline");
 
+  const activeSet = new Set(activeControls);
+
   const risks: ReportedRisk[] = [...collected.values()].map(({ template, triggeredBy }) => {
     const adjustments = adjustmentsFor(template, detection, answers);
-    const likelihood = clamp(
+    const contextLikelihood = clamp(
       template.likelihood + adjustments.reduce((sum, item) => sum + (item.likelihood ?? 0), 0),
     );
     const impact = clamp(
       template.impact + adjustments.reduce((sum, item) => sum + (item.impact ?? 0), 0),
     );
+
+    const applicableIds = template.technical.mitigationControlIds;
+    const appliedIds = applicableIds.filter((id) => activeSet.has(id));
+    const missingIds = applicableIds.filter((id) => !activeSet.has(id));
+    const rawDiscount = appliedIds.reduce(
+      (sum, id) => sum + (TECHNICAL_CONTROLS[id]?.weight ?? 0),
+      0,
+    );
+    const discountWeight = Math.min(0.8, rawDiscount);
+    const likelihood = clamp(Math.round(contextLikelihood * (1 - discountWeight)));
     const score = likelihood * impact;
     const severity = severityFor(score);
+
+    const noteList = adjustments.map((item) => item.note);
+    if (discountWeight > 0) {
+      noteList.push(
+        `Áp dụng ${appliedIds.length} kiểm soát kỹ thuật (${appliedIds.join(", ")}): W_total = ${(discountWeight * 100).toFixed(0)}% → L_final = ${likelihood}.`,
+      );
+    }
+
     return {
       id: template.id,
       title: template.title,
@@ -649,12 +822,21 @@ export function buildRiskReport(
       severity,
       severityLabel: SEVERITY_LABELS[severity],
       recommendations: template.recommendations,
-      adjustments: adjustments.map((item) => item.note),
+      adjustments: noteList,
       technical: {
         name: template.technical.name,
+        owasp: template.technical.owasp,
+        nist: template.technical.nist,
         references: template.technical.references,
         triggeredBy: [...triggeredBy],
+        baseLikelihood: template.likelihood,
+        contextLikelihood,
+        baseImpact: template.impact,
         baseScore: template.likelihood * template.impact,
+        mitigationControlIds: applicableIds,
+        appliedControlIds: appliedIds,
+        missingControlIds: missingIds,
+        discountWeight,
       },
     };
   });
