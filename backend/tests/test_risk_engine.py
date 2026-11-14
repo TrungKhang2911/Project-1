@@ -153,3 +153,26 @@ def test_rejects_control_not_defined_for_component(
                 ]
             )
         )
+
+
+def test_custom_component_requires_description() -> None:
+    with pytest.raises(ValueError, match="custom_description is required"):
+        AssessmentRequest(
+            architecture=[
+                {"node_type": "Other", "is_public": False, "controls": []}
+            ]
+        )
+
+
+def test_custom_component_rejects_predefined_controls() -> None:
+    with pytest.raises(ValueError, match="cannot use predefined security controls"):
+        AssessmentRequest(
+            architecture=[
+                {
+                    "node_type": "Other",
+                    "custom_description": "Internal Redis cache",
+                    "is_public": False,
+                    "controls": ["CTRL_GUARDRAILS"],
+                }
+            ]
+        )

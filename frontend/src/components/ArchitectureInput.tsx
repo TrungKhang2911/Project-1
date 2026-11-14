@@ -112,11 +112,27 @@ export function ArchitectureInput({
       setError("Add at least one architecture node before assessing.");
       return;
     }
+    if (
+      nodes.some(
+        (node) =>
+          node.node_type === "Other" && !node.custom_description?.trim(),
+      )
+    ) {
+      setError("Describe each custom component before assessing.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
       await onAssess({
-        architecture: nodes.map(({ localId: _localId, ...node }) => node),
+        architecture: nodes.map(
+          ({ localId: _localId, custom_description, ...node }) => ({
+            ...node,
+            ...(node.node_type === "Other"
+              ? { custom_description: custom_description?.trim() ?? "" }
+              : {}),
+          }),
+        ),
       });
     } catch (assessmentError: unknown) {
       setError(
@@ -171,8 +187,28 @@ export function ArchitectureInput({
                     {component.display_name}
                   </option>
                 ))}
+                <option value="Other">Other (custom component)</option>
               </select>
             </label>
+
+            {node.node_type === "Other" && (
+              <label>
+                Describe this component
+                <textarea
+                  value={node.custom_description ?? ""}
+                  onChange={(event) =>
+                    updateNode(node.localId, (current) => ({
+                      ...current,
+                      custom_description: event.target.value,
+                      controls: [],
+                    }))
+                  }
+                  placeholder="For example: internal Redis cache system"
+                  rows={4}
+                  required
+                />
+              </label>
+            )}
 
             <label className="architecture-node__public">
               <input
@@ -188,34 +224,36 @@ export function ArchitectureInput({
               Publicly accessible
             </label>
 
-            <fieldset>
-              <legend>Security controls</legend>
-              {selectedComponent?.controls.map((control) => (
-                <label key={control.control_id} className="architecture-control">
-                  <input
-                    type="checkbox"
-                    checked={node.controls.includes(control.control_id)}
-                    onChange={(event) =>
-                      updateNode(node.localId, (current) => ({
-                        ...current,
-                        controls: event.target.checked
-                          ? [...current.controls, control.control_id]
-                          : current.controls.filter(
-                              (controlId) => controlId !== control.control_id,
-                            ),
-                      }))
-                    }
-                  />
-                  <span>
-                    <strong>{control.control_id}</strong>
-                    <small>{control.description}</small>
-                  </span>
-                </label>
-              ))}
-              {selectedComponent?.controls.length === 0 && (
-                <p>No controls are defined for this component.</p>
-              )}
-            </fieldset>
+            {node.node_type !== "Other" && (
+              <fieldset>
+                <legend>Security controls</legend>
+                {selectedComponent?.controls.map((control) => (
+                  <label key={control.control_id} className="architecture-control">
+                    <input
+                      type="checkbox"
+                      checked={node.controls.includes(control.control_id)}
+                      onChange={(event) =>
+                        updateNode(node.localId, (current) => ({
+                          ...current,
+                          controls: event.target.checked
+                            ? [...current.controls, control.control_id]
+                            : current.controls.filter(
+                                (controlId) => controlId !== control.control_id,
+                              ),
+                        }))
+                      }
+                    />
+                    <span>
+                      <strong>{control.control_id}</strong>
+                      <small>{control.description}</small>
+                    </span>
+                  </label>
+                ))}
+                {selectedComponent?.controls.length === 0 && (
+                  <p>No controls are defined for this component.</p>
+                )}
+              </fieldset>
+            )}
 
             <button
               type="button"

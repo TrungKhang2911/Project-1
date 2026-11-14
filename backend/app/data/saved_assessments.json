@@ -1,0 +1,487 @@
+[
+  {
+    "answers": {
+      "system_name": null,
+      "purpose": "content",
+      "purpose_details": null,
+      "scenarios": [],
+      "collaboration": "manager",
+      "autonomy": "approval_required",
+      "resources": [
+        "internal_docs"
+      ],
+      "audience": "internal",
+      "sensitive_data": []
+    },
+    "detection": {
+      "primary_pattern": "COORDINATOR",
+      "patterns": [
+        "REACT",
+        "COORDINATOR",
+        "HUMAN_IN_THE_LOOP"
+      ],
+      "human_oversight": "full",
+      "is_multi_agent": true,
+      "confidence": 0.9,
+      "rationale": "The system uses a manager pattern to delegate tasks to sub-agents and requires human approval for actions, fitting the COORDINATOR pattern with a HUMAN_IN_THE_LOOP modifier.",
+      "plain_summary": "Hệ thống của bạn có một AI điều phối công việc cho các AI chuyên trách khác, và bạn sẽ luôn là người kiểm tra và phê duyệt kết quả cuối cùng trước khi chúng được sử dụng.",
+      "source": "llm"
+    },
+    "overall_score": 15,
+    "overall_severity": "High",
+    "overall_severity_label": "Cao",
+    "oversight_note": "Tốt: ứng dụng luôn chờ bạn đồng ý trước khi hành động, nên các rủi ro do AI tự làm đã được giảm đáng kể.",
+    "top_actions": [
+      "Chỉ cấp cho AI những công cụ thật sự cần thiết.",
+      "Đặt bước kiểm tra an toàn cố định mà AI không thể bỏ qua.",
+      "Nên giới hạn quyền của từng AI."
+    ],
+    "risks": [
+      {
+        "id": "TOOL_HIJACK",
+        "title": "Bị lừa để tự ý dùng công cụ",
+        "explanation": "AI của bạn tự quyết định khi nào gửi email, tra cứu hay thao tác dữ liệu. Nếu kẻ xấu lừa được nó bằng một câu lệnh khéo léo, AI có thể làm những việc bạn không hề cho phép.",
+        "likelihood": 3,
+        "impact": 5,
+        "score": 15,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Chỉ cấp cho AI những công cụ thật sự cần thiết.",
+          "Bắt buộc có người duyệt trước các hành động quan trọng như chuyển tiền, xoá dữ liệu, gửi email ra ngoài.",
+          "Đặt hạn mức cho từng hành động (số tiền, số email mỗi ngày)."
+        ],
+        "adjustments": [
+          "Đã giảm mức độ vì mọi hành động đều phải chờ người bấm \"Đồng ý\".",
+          "Tăng mức độ vì AI đọc nội dung từ tài liệu hoặc Internet, nơi có thể bị cài nội dung xấu."
+        ]
+      },
+      {
+        "id": "ROUTING_BYPASS",
+        "title": "Lách qua khâu kiểm duyệt",
+        "explanation": "AI \"trưởng nhóm\" quyết định mỗi yêu cầu sẽ đi đâu. Một câu lệnh khéo léo có thể khiến nó bỏ qua bước kiểm tra an toàn và chuyển thẳng yêu cầu tới nơi không nên tới.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Đặt bước kiểm tra an toàn cố định mà AI không thể bỏ qua.",
+          "Chỉ cho AI giao việc chọn trong danh sách đường đi đã được duyệt sẵn."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "CROSS_AGENT_CONTAMINATION",
+        "title": "Rủi ro lây nhiễm chéo",
+        "explanation": "Ứng dụng của bạn có nhiều AI chia sẻ công việc. Nếu kẻ xấu lừa được một AI, lỗi này có thể lan sang các AI khác và làm hỏng toàn bộ quy trình.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Nên giới hạn quyền của từng AI.",
+          "Coi tin nhắn giữa các AI là thông tin chưa được kiểm chứng, phải kiểm tra trước khi làm theo.",
+          "Chuẩn bị cách tạm dừng nhanh một AI khi phát hiện nó hoạt động bất thường."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "POISONED_DOCS",
+        "title": "Tài liệu bị cài \"bẫy\"",
+        "explanation": "AI đọc tài liệu của công ty để trả lời. Nếu ai đó chèn nội dung độc hại vào một tài liệu, AI có thể làm theo nội dung đó thay vì làm theo bạn.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Chỉ cho người có trách nhiệm thêm hoặc sửa tài liệu mà AI đọc.",
+          "Rà soát tài liệu mới trước khi đưa vào cho AI sử dụng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "DOC_ACCESS_LEAK",
+        "title": "Lộ tài liệu cho người không có quyền",
+        "explanation": "AI có thể trả lời bằng nội dung lấy từ tài liệu mà người hỏi lẽ ra không được xem, ví dụ bảng lương hay hợp đồng.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "AI chỉ được tra cứu những tài liệu mà chính người hỏi có quyền xem.",
+          "Tách riêng tài liệu mật khỏi kho tài liệu AI sử dụng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "PROMPT_INJECTION",
+        "title": "Bị lừa bằng lời nói",
+        "explanation": "Người dùng có thể viết những câu \"lừa\" khéo léo để AI quên các quy tắc bạn đặt ra, ví dụ nói những điều bị cấm hoặc tiết lộ hướng dẫn nội bộ.",
+        "likelihood": 4,
+        "impact": 3,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Kiểm tra câu trả lời của AI trước khi hiển thị cho người dùng.",
+          "Thử \"tấn công\" ứng dụng bằng các câu lừa phổ biến trước khi ra mắt.",
+          "Không đưa mật khẩu hay thông tin bí mật vào phần hướng dẫn của AI."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "RUNAWAY_LOOP",
+        "title": "Chạy vòng vòng không dừng",
+        "explanation": "AI tự thử, xem kết quả rồi thử lại. Gặp tình huống lạ, nó có thể lặp mãi, làm tốn chi phí và khiến hệ thống chậm hoặc ngừng hoạt động.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Giới hạn số bước tối đa AI được làm cho mỗi yêu cầu.",
+          "Đặt ngân sách chi phí hằng ngày và cảnh báo khi vượt."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "MISINFORMATION",
+        "title": "Trả lời sai nhưng nghe rất thuyết phục",
+        "explanation": "AI đôi khi \"bịa\" thông tin nhưng nói rất tự tin. Người dùng có thể tin và làm theo mà không kiểm tra lại.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Ghi rõ cho người dùng biết đây là câu trả lời do AI tạo ra.",
+          "Yêu cầu AI dẫn nguồn và kiểm tra lại với các thông tin quan trọng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "APPROVAL_FATIGUE",
+        "title": "Duyệt cho có",
+        "explanation": "Việc có người bấm \"Đồng ý\" giúp giảm rủi ro rất nhiều. Tuy nhiên nếu phải duyệt quá nhiều, người duyệt dễ bấm theo thói quen mà không đọc kỹ.",
+        "likelihood": 3,
+        "impact": 2,
+        "score": 6,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Chỉ yêu cầu duyệt với những hành động quan trọng.",
+          "Hiển thị rõ AI sắp làm gì, gửi cho ai, bao nhiêu tiền trước khi bấm \"Đồng ý\"."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "PRIVILEGE_ESCALATION",
+        "title": "AI vượt quyền",
+        "explanation": "Có AI được giao nhiệm vụ chuyển việc cho AI khác. Kẻ xấu có thể lừa nó chuyển yêu cầu sang một AI có nhiều quyền hơn, nhờ đó làm được những việc lẽ ra bị cấm.",
+        "likelihood": 1,
+        "impact": 5,
+        "score": 5,
+        "severity": "Low",
+        "severityLabel": "Thấp",
+        "recommendations": [
+          "Nên giới hạn quyền của từng AI ở mức tối thiểu cần thiết.",
+          "Mỗi AI phải tự kiểm tra quyền, không chỉ tin vào AI giao việc.",
+          "Không cho AI giao việc tự cấp thêm quyền cho AI khác."
+        ],
+        "adjustments": [
+          "Đã giảm mức độ vì mọi hành động đều phải chờ người bấm \"Đồng ý\"."
+        ]
+      }
+    ],
+    "assessment_id": "b8c77cd982ce",
+    "created_at": "2026-11-14T17:02:48+00:00"
+  },
+  {
+    "answers": {
+      "system_name": "Trợ lý duyệt đơn hàng",
+      "purpose": "content",
+      "purpose_details": null,
+      "scenarios": [],
+      "collaboration": "unsure",
+      "autonomy": "partial_auto",
+      "resources": [
+        "external_tools"
+      ],
+      "audience": "public",
+      "sensitive_data": [
+        "confidential"
+      ]
+    },
+    "detection": {
+      "primary_pattern": "REACT",
+      "patterns": [
+        "REACT",
+        "HUMAN_IN_THE_LOOP"
+      ],
+      "human_oversight": "partial",
+      "is_multi_agent": false,
+      "confidence": 0.7,
+      "rationale": "The system uses external tools and has partial autonomy, which indicates a ReAct pattern. Human oversight is required due to the partial automation setting.",
+      "plain_summary": "Hệ thống này sử dụng các công cụ bên ngoài để tự động xử lý đơn hàng, nhưng bạn sẽ cần xem xét và phê duyệt một phần công việc trước khi hoàn tất.",
+      "source": "llm"
+    },
+    "overall_score": 15,
+    "overall_severity": "High",
+    "overall_severity_label": "Cao",
+    "oversight_note": "Ứng dụng hỏi ý kiến bạn trước những việc quan trọng. Hãy chắc chắn rằng \"việc quan trọng\" được định nghĩa rõ ràng.",
+    "top_actions": [
+      "Chỉ cấp cho AI những công cụ thật sự cần thiết.",
+      "Kiểm tra câu trả lời của AI trước khi hiển thị cho người dùng.",
+      "Chỉ cấp quyền tối thiểu (ví dụ: chỉ được xem lịch, không được xoá)."
+    ],
+    "risks": [
+      {
+        "id": "TOOL_HIJACK",
+        "title": "Bị lừa để tự ý dùng công cụ",
+        "explanation": "AI của bạn tự quyết định khi nào gửi email, tra cứu hay thao tác dữ liệu. Nếu kẻ xấu lừa được nó bằng một câu lệnh khéo léo, AI có thể làm những việc bạn không hề cho phép.",
+        "likelihood": 3,
+        "impact": 5,
+        "score": 15,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Chỉ cấp cho AI những công cụ thật sự cần thiết.",
+          "Bắt buộc có người duyệt trước các hành động quan trọng như chuyển tiền, xoá dữ liệu, gửi email ra ngoài.",
+          "Đặt hạn mức cho từng hành động (số tiền, số email mỗi ngày)."
+        ],
+        "adjustments": [
+          "Đã giảm một phần vì việc quan trọng vẫn được hỏi ý kiến trước."
+        ]
+      },
+      {
+        "id": "PROMPT_INJECTION",
+        "title": "Bị lừa bằng lời nói",
+        "explanation": "Người dùng có thể viết những câu \"lừa\" khéo léo để AI quên các quy tắc bạn đặt ra, ví dụ nói những điều bị cấm hoặc tiết lộ hướng dẫn nội bộ.",
+        "likelihood": 5,
+        "impact": 3,
+        "score": 15,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Kiểm tra câu trả lời của AI trước khi hiển thị cho người dùng.",
+          "Thử \"tấn công\" ứng dụng bằng các câu lừa phổ biến trước khi ra mắt.",
+          "Không đưa mật khẩu hay thông tin bí mật vào phần hướng dẫn của AI."
+        ],
+        "adjustments": [
+          "Tăng mức độ vì ai cũng có thể dùng ứng dụng này."
+        ]
+      },
+      {
+        "id": "EXCESSIVE_AGENCY",
+        "title": "AI có quá nhiều quyền",
+        "explanation": "AI được kết nối với email, lịch, thanh toán... Nếu nó có nhiều quyền hơn mức cần, chỉ một sai sót nhỏ cũng có thể gây thiệt hại thật.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Chỉ cấp quyền tối thiểu (ví dụ: chỉ được xem lịch, không được xoá).",
+          "Dùng tài khoản riêng cho AI, không dùng tài khoản quản trị.",
+          "Đặt hạn mức cho các thao tác liên quan đến tiền."
+        ],
+        "adjustments": [
+          "Đã giảm một phần vì việc quan trọng vẫn được hỏi ý kiến trước."
+        ]
+      },
+      {
+        "id": "RUNAWAY_LOOP",
+        "title": "Chạy vòng vòng không dừng",
+        "explanation": "AI tự thử, xem kết quả rồi thử lại. Gặp tình huống lạ, nó có thể lặp mãi, làm tốn chi phí và khiến hệ thống chậm hoặc ngừng hoạt động.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Giới hạn số bước tối đa AI được làm cho mỗi yêu cầu.",
+          "Đặt ngân sách chi phí hằng ngày và cảnh báo khi vượt."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "MISINFORMATION",
+        "title": "Trả lời sai nhưng nghe rất thuyết phục",
+        "explanation": "AI đôi khi \"bịa\" thông tin nhưng nói rất tự tin. Người dùng có thể tin và làm theo mà không kiểm tra lại.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Ghi rõ cho người dùng biết đây là câu trả lời do AI tạo ra.",
+          "Yêu cầu AI dẫn nguồn và kiểm tra lại với các thông tin quan trọng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "APPROVAL_FATIGUE",
+        "title": "Duyệt cho có",
+        "explanation": "Việc có người bấm \"Đồng ý\" giúp giảm rủi ro rất nhiều. Tuy nhiên nếu phải duyệt quá nhiều, người duyệt dễ bấm theo thói quen mà không đọc kỹ.",
+        "likelihood": 3,
+        "impact": 2,
+        "score": 6,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Chỉ yêu cầu duyệt với những hành động quan trọng.",
+          "Hiển thị rõ AI sắp làm gì, gửi cho ai, bao nhiêu tiền trước khi bấm \"Đồng ý\"."
+        ],
+        "adjustments": []
+      }
+    ],
+    "assessment_id": "753931e168b0",
+    "created_at": "2026-11-14T16:57:18+00:00"
+  },
+  {
+    "answers": {
+      "system_name": null,
+      "purpose": "other",
+      "purpose_details": null,
+      "scenarios": [],
+      "collaboration": "alone",
+      "autonomy": "approval_required",
+      "resources": [
+        "external_tools"
+      ],
+      "audience": "internal",
+      "sensitive_data": [
+        "financial"
+      ]
+    },
+    "detection": {
+      "primary_pattern": "REACT",
+      "patterns": [
+        "REACT",
+        "HUMAN_IN_THE_LOOP"
+      ],
+      "human_oversight": "full",
+      "is_multi_agent": false,
+      "confidence": 0.9,
+      "rationale": "The system operates as a single agent using external tools to perform tasks, which triggers the REACT pattern. Because the user requires approval for actions, HUMAN_IN_THE_LOOP is added as a secondary pattern.",
+      "plain_summary": "Hệ thống này sử dụng một trí tuệ nhân tạo duy nhất để thực hiện các công việc bằng cách sử dụng các công cụ bên ngoài, nhưng mọi hành động của nó đều cần bạn xem xét và phê duyệt trước khi thực hiện.",
+      "source": "llm"
+    },
+    "overall_score": 12,
+    "overall_severity": "High",
+    "overall_severity_label": "Cao",
+    "oversight_note": "Tốt: ứng dụng luôn chờ bạn đồng ý trước khi hành động, nên các rủi ro do AI tự làm đã được giảm đáng kể.",
+    "top_actions": [
+      "Kiểm tra câu trả lời của AI trước khi hiển thị cho người dùng.",
+      "Chỉ cấp cho AI những công cụ thật sự cần thiết.",
+      "Giới hạn số bước tối đa AI được làm cho mỗi yêu cầu."
+    ],
+    "risks": [
+      {
+        "id": "PROMPT_INJECTION",
+        "title": "Bị lừa bằng lời nói",
+        "explanation": "Người dùng có thể viết những câu \"lừa\" khéo léo để AI quên các quy tắc bạn đặt ra, ví dụ nói những điều bị cấm hoặc tiết lộ hướng dẫn nội bộ.",
+        "likelihood": 4,
+        "impact": 3,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Kiểm tra câu trả lời của AI trước khi hiển thị cho người dùng.",
+          "Thử \"tấn công\" ứng dụng bằng các câu lừa phổ biến trước khi ra mắt.",
+          "Không đưa mật khẩu hay thông tin bí mật vào phần hướng dẫn của AI."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "TOOL_HIJACK",
+        "title": "Bị lừa để tự ý dùng công cụ",
+        "explanation": "AI của bạn tự quyết định khi nào gửi email, tra cứu hay thao tác dữ liệu. Nếu kẻ xấu lừa được nó bằng một câu lệnh khéo léo, AI có thể làm những việc bạn không hề cho phép.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Chỉ cấp cho AI những công cụ thật sự cần thiết.",
+          "Bắt buộc có người duyệt trước các hành động quan trọng như chuyển tiền, xoá dữ liệu, gửi email ra ngoài.",
+          "Đặt hạn mức cho từng hành động (số tiền, số email mỗi ngày)."
+        ],
+        "adjustments": [
+          "Đã giảm mức độ vì mọi hành động đều phải chờ người bấm \"Đồng ý\".",
+          "Tăng mức độ vì ứng dụng có liên quan đến tiền bạc."
+        ]
+      },
+      {
+        "id": "RUNAWAY_LOOP",
+        "title": "Chạy vòng vòng không dừng",
+        "explanation": "AI tự thử, xem kết quả rồi thử lại. Gặp tình huống lạ, nó có thể lặp mãi, làm tốn chi phí và khiến hệ thống chậm hoặc ngừng hoạt động.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Giới hạn số bước tối đa AI được làm cho mỗi yêu cầu.",
+          "Đặt ngân sách chi phí hằng ngày và cảnh báo khi vượt."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "MISINFORMATION",
+        "title": "Trả lời sai nhưng nghe rất thuyết phục",
+        "explanation": "AI đôi khi \"bịa\" thông tin nhưng nói rất tự tin. Người dùng có thể tin và làm theo mà không kiểm tra lại.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Ghi rõ cho người dùng biết đây là câu trả lời do AI tạo ra.",
+          "Yêu cầu AI dẫn nguồn và kiểm tra lại với các thông tin quan trọng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "APPROVAL_FATIGUE",
+        "title": "Duyệt cho có",
+        "explanation": "Việc có người bấm \"Đồng ý\" giúp giảm rủi ro rất nhiều. Tuy nhiên nếu phải duyệt quá nhiều, người duyệt dễ bấm theo thói quen mà không đọc kỹ.",
+        "likelihood": 3,
+        "impact": 2,
+        "score": 6,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Chỉ yêu cầu duyệt với những hành động quan trọng.",
+          "Hiển thị rõ AI sắp làm gì, gửi cho ai, bao nhiêu tiền trước khi bấm \"Đồng ý\"."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "EXCESSIVE_AGENCY",
+        "title": "AI có quá nhiều quyền",
+        "explanation": "AI được kết nối với email, lịch, thanh toán... Nếu nó có nhiều quyền hơn mức cần, chỉ một sai sót nhỏ cũng có thể gây thiệt hại thật.",
+        "likelihood": 1,
+        "impact": 5,
+        "score": 5,
+        "severity": "Low",
+        "severityLabel": "Thấp",
+        "recommendations": [
+          "Chỉ cấp quyền tối thiểu (ví dụ: chỉ được xem lịch, không được xoá).",
+          "Dùng tài khoản riêng cho AI, không dùng tài khoản quản trị.",
+          "Đặt hạn mức cho các thao tác liên quan đến tiền."
+        ],
+        "adjustments": [
+          "Đã giảm mức độ vì mọi hành động đều phải chờ người bấm \"Đồng ý\".",
+          "Tăng mức độ vì ứng dụng có liên quan đến tiền bạc."
+        ]
+      }
+    ],
+    "assessment_id": "020c4aeaf54d",
+    "created_at": "2026-11-14T16:53:22+00:00"
+  }
+]

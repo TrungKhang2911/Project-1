@@ -19,6 +19,7 @@ class NodeInput(StrictModel):
     node_type: str = Field(min_length=1)
     is_public: bool
     controls: list[str] = Field(default_factory=list)
+    custom_description: str | None = Field(default=None, min_length=1)
 
     @field_validator("node_type")
     @classmethod
@@ -41,6 +42,29 @@ class NodeInput(StrictModel):
                 normalized.append(control_id)
                 seen.add(control_id)
         return normalized
+
+    @field_validator("custom_description")
+    @classmethod
+    def normalize_custom_description(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("custom_description must not be empty")
+        return normalized
+
+    @model_validator(mode="after")
+    def validate_custom_component(self) -> NodeInput:
+        if self.node_type.casefold() == "other":
+            if self.custom_description is None:
+                raise ValueError(
+                    "custom_description is required when node_type is 'Other'"
+                )
+            if self.controls:
+                raise ValueError(
+                    "custom components cannot use predefined security controls"
+                )
+        return self
 
 
 class AssessmentRequest(StrictModel):

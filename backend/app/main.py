@@ -12,12 +12,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routes import router
+from app.core.assessment_store import AssessmentStore
 from app.core.db_adapter import KnowledgeBaseLoadError, KnowledgeBaseRepository
+from app.core.config import Settings
+from app.core.hybrid_manager import (
+    CustomComponentAnalysisError,
+    HybridRiskManager,
+)
 from app.core.kb_manager import (
     KnowledgeBaseManager,
     UnknownComponentError,
     UnknownControlError,
 )
+from app.core.llm_engine import LLMRiskAnalyzer
+from app.core.pattern_detector import PatternDetector
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +43,13 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     knowledge_base = repository.get_knowledge_base()
     application.state.kb_repository = repository
     application.state.kb_manager = KnowledgeBaseManager(knowledge_base)
+    application.state.llm_analyzer = LLMRiskAnalyzer(Settings())
+    application.state.pattern_detector = PatternDetector(Settings())
+    application.state.assessment_store = AssessmentStore()
+    application.state.hybrid_manager = HybridRiskManager(
+        application.state.kb_manager,
+        application.state.llm_analyzer,
+    )
     logger.info(
         "Loaded risk knowledge base version %s with %d components",
         knowledge_base.metadata.version,
@@ -46,8 +61,8 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="AI System Security Risk Assessment API",
     description=(
-        "Deterministic risk assessment using the configured knowledge base "
-        "and context-aware mitigation weights."
+        "Hybrid risk assessment using deterministic knowledge-base rules "
+        "and optional Gemini structured-output analysis."
     ),
     version="1.0.0",
     docs_url="/docs",
@@ -59,7 +74,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_configured_origins(),
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
 app.include_router(router)
@@ -79,6 +94,14 @@ async def unknown_control_handler(
 ) -> JSONResponse:
     logger.info("Rejected unknown control at %s: %s", request.url.path, exc)
     return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+@app.exception_handler(CustomComponentAnalysisError)
+async def custom_component_analysis_handler(
+    request: Request, exc: CustomComponentAnalysisError
+) -> JSONResponse:
+    logger.error("Custom component analysis failed at %s: %s", request.url.path, exc)
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
 @app.exception_handler(KnowledgeBaseLoadError)
