@@ -5,10 +5,12 @@ import type {
   AssessmentRequest,
   ComponentOption,
   ComponentsResponse,
+  Language,
 } from "../types";
 
 interface ArchitectureInputProps {
   apiBaseUrl?: string;
+  language?: Language;
   onAssess: (request: AssessmentRequest) => Promise<void>;
 }
 
@@ -20,8 +22,10 @@ const DEFAULT_API_BASE_URL = "http://localhost:8000";
 
 export function ArchitectureInput({
   apiBaseUrl = DEFAULT_API_BASE_URL,
+  language = "vi",
   onAssess,
 }: ArchitectureInputProps): JSX.Element {
+  const isEn = language === "en";
   const [components, setComponents] = useState<ComponentOption[]>([]);
   const [nodes, setNodes] = useState<EditableNode[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -40,11 +44,19 @@ export function ArchitectureInput({
           { signal: controller.signal },
         );
         if (!response.ok) {
-          throw new Error(`Unable to load component options (${response.status}).`);
+          throw new Error(
+            isEn
+              ? `Unable to load component options (${response.status}).`
+              : `Không thể tải danh sách thành phần (${response.status}).`,
+          );
         }
         const payload = (await response.json()) as ComponentsResponse;
         if (!Array.isArray(payload.components) || payload.components.length === 0) {
-          throw new Error("The API returned no component options.");
+          throw new Error(
+            isEn
+              ? "The API returned no component options."
+              : "Máy chủ không trả về danh sách thành phần.",
+          );
         }
         setComponents(payload.components);
         setNodes((current) =>
@@ -68,7 +80,9 @@ export function ArchitectureInput({
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "An unexpected error occurred while loading components.",
+            : isEn
+              ? "Unable to load architecture components."
+              : "Không thể tải danh sách thành phần hệ thống.",
         );
       } finally {
         if (!controller.signal.aborted) {
@@ -79,7 +93,7 @@ export function ArchitectureInput({
 
     void loadComponents();
     return () => controller.abort();
-  }, [apiBaseUrl]);
+  }, [apiBaseUrl, isEn]);
 
   function addNode(): void {
     if (components.length === 0) {
@@ -109,7 +123,11 @@ export function ArchitectureInput({
   async function submitAssessment(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     if (nodes.length === 0) {
-      setError("Add at least one architecture node before assessing.");
+      setError(
+        isEn
+          ? "Add at least one architecture node before assessing."
+          : "Cần thêm ít nhất một thành phần trước khi đánh giá.",
+      );
       return;
     }
     if (
@@ -118,7 +136,11 @@ export function ArchitectureInput({
           node.node_type === "Other" && !node.custom_description?.trim(),
       )
     ) {
-      setError("Describe each custom component before assessing.");
+      setError(
+        isEn
+          ? "Describe each custom component before assessing."
+          : "Vui lòng nhập mô tả cho thành phần tùy chỉnh.",
+      );
       return;
     }
     setSubmitting(true);
@@ -138,7 +160,9 @@ export function ArchitectureInput({
       setError(
         assessmentError instanceof Error
           ? assessmentError.message
-          : "Assessment failed unexpectedly.",
+          : isEn
+            ? "Assessment failed unexpectedly."
+            : "Quá trình đánh giá gặp sự cố.",
       );
     } finally {
       setSubmitting(false);
@@ -146,18 +170,26 @@ export function ArchitectureInput({
   }
 
   if (loading) {
-    return <p role="status">Loading architecture options…</p>;
+    return (
+      <p role="status">
+        {isEn ? "Loading architecture components…" : "Đang tải danh sách thành phần…"}
+      </p>
+    );
   }
 
   return (
     <form className="architecture-input" onSubmit={(event) => void submitAssessment(event)}>
       <header className="architecture-input__header">
         <div>
-          <h2>System architecture</h2>
-          <p>Configure each component and its applicable security controls.</p>
+          <h2>{isEn ? "System Architecture" : "Thành phần kiến trúc"}</h2>
+          <p>
+            {isEn
+              ? "Configure each component node and its deployed security controls."
+              : "Cấu hình từng thành phần hệ thống và các kiểm soát bảo mật tương ứng."}
+          </p>
         </div>
         <button type="button" onClick={addNode} disabled={components.length === 0}>
-          Add node
+          {isEn ? "+ Add Node" : "+ Thêm thành phần"}
         </button>
       </header>
 
@@ -169,9 +201,9 @@ export function ArchitectureInput({
         );
         return (
           <fieldset className="architecture-node" key={node.localId}>
-            <legend>Node {index + 1}</legend>
+            <legend>{isEn ? `Node ${index + 1}` : `Thành phần ${index + 1}`}</legend>
             <label>
-              Component
+              {isEn ? "Component Type" : "Loại thành phần"}
               <select
                 value={node.node_type}
                 onChange={(event) =>
@@ -187,13 +219,15 @@ export function ArchitectureInput({
                     {component.display_name}
                   </option>
                 ))}
-                <option value="Other">Other (custom component)</option>
+                <option value="Other">
+                  {isEn ? "Other (Custom Component)" : "Khác (Thành phần tùy chỉnh)"}
+                </option>
               </select>
             </label>
 
             {node.node_type === "Other" && (
               <label>
-                Describe this component
+                {isEn ? "Component Description" : "Mô tả thành phần"}
                 <textarea
                   value={node.custom_description ?? ""}
                   onChange={(event) =>
@@ -203,7 +237,11 @@ export function ArchitectureInput({
                       controls: [],
                     }))
                   }
-                  placeholder="For example: internal Redis cache system"
+                  placeholder={
+                    isEn
+                      ? "e.g., Internal Redis session cache"
+                      : "Ví dụ: Bộ nhớ đệm phiên truy cập Redis nội bộ"
+                  }
                   rows={4}
                   required
                 />
@@ -221,12 +259,12 @@ export function ArchitectureInput({
                   }))
                 }
               />
-              Publicly accessible
+              {isEn ? "Publicly accessible" : "Cho phép truy cập từ mạng công cộng"}
             </label>
 
             {node.node_type !== "Other" && (
               <fieldset>
-                <legend>Security controls</legend>
+                <legend>{isEn ? "Security Controls" : "Kiểm soát bảo mật"}</legend>
                 {selectedComponent?.controls.map((control) => (
                   <label key={control.control_id} className="architecture-control">
                     <input
@@ -250,7 +288,11 @@ export function ArchitectureInput({
                   </label>
                 ))}
                 {selectedComponent?.controls.length === 0 && (
-                  <p>No controls are defined for this component.</p>
+                  <p>
+                    {isEn
+                      ? "No predefined controls for this component."
+                      : "Chưa có kiểm soát định nghĩa sẵn cho thành phần này."}
+                  </p>
                 )}
               </fieldset>
             )}
@@ -262,16 +304,22 @@ export function ArchitectureInput({
                   current.filter((candidate) => candidate.localId !== node.localId),
                 )
               }
-              aria-label={`Remove node ${index + 1}`}
+              aria-label={isEn ? `Remove node ${index + 1}` : `Xóa thành phần ${index + 1}`}
             >
-              Remove node
+              {isEn ? "Remove node" : "Xóa thành phần"}
             </button>
           </fieldset>
         );
       })}
 
       <button type="submit" disabled={submitting || nodes.length === 0}>
-        {submitting ? "Assessing…" : "Assess risks"}
+        {submitting
+          ? isEn
+            ? "Assessing…"
+            : "Đang đánh giá…"
+          : isEn
+            ? "Assess Risks"
+            : "Đánh giá rủi ro"}
       </button>
     </form>
   );

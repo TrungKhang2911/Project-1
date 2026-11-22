@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.routes import router
 from app.core.assessment_store import AssessmentStore
+from app.core.custom_node_analyzer import CustomNodeAnalyzer
 from app.core.db_adapter import KnowledgeBaseLoadError, KnowledgeBaseRepository
 from app.core.config import Settings
 from app.core.hybrid_manager import (
@@ -43,8 +44,9 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     knowledge_base = repository.get_knowledge_base()
     application.state.kb_repository = repository
     application.state.kb_manager = KnowledgeBaseManager(knowledge_base)
-    application.state.llm_analyzer = LLMRiskAnalyzer(Settings())
-    application.state.pattern_detector = PatternDetector(Settings())
+    application.state.llm_analyzer = LLMRiskAnalyzer()
+    application.state.pattern_detector = PatternDetector()
+    application.state.custom_node_analyzer = CustomNodeAnalyzer()
     application.state.assessment_store = AssessmentStore()
     application.state.hybrid_manager = HybridRiskManager(
         application.state.kb_manager,

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
 import {
+  getScenarioPresets,
   getWizardSteps,
   MAX_SCENARIOS,
   PURPOSE_DETAILS_MAX,
   SCENARIO_MAX,
-  SCENARIO_PRESETS,
   SYSTEM_NAME_MAX,
   type ChoiceOption,
   type WizardStep,
@@ -169,7 +169,11 @@ export function AssessmentWizard({
   async function submit(): Promise<void> {
     const answers = toAnswers(draft);
     if (answers === null) {
-      setError("Vui lòng trả lời đầy đủ các câu hỏi trước khi xem kết quả.");
+      setError(
+        language === "en"
+          ? "Please complete all steps before running the assessment."
+          : "Vui lòng trả lời đầy đủ các câu hỏi trước khi xem kết quả.",
+      );
       return;
     }
     setSubmitting(true);
@@ -180,7 +184,9 @@ export function AssessmentWizard({
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Không thể đánh giá lúc này. Vui lòng thử lại.",
+          : language === "en"
+            ? "Unable to run the assessment right now. Please try again."
+            : "Không thể đánh giá lúc này. Vui lòng thử lại.",
       );
     } finally {
       setSubmitting(false);
@@ -189,7 +195,7 @@ export function AssessmentWizard({
 
   function renderPurposeTargetDetails(): JSX.Element {
     const currentPurpose: Purpose = draft.purpose ?? "customer_support";
-    const presets = SCENARIO_PRESETS[currentPurpose];
+    const presets = getScenarioPresets(language)[currentPurpose];
 
     return (
       <div className="wizard__target-box">
@@ -351,7 +357,10 @@ export function AssessmentWizard({
         .join(", ");
     }
     const value = draft[current.field];
-    return current.options.find((option) => option.value === value)?.label ?? "Chưa trả lời";
+    return (
+      current.options.find((option) => option.value === value)?.label ??
+      (language === "en" ? "Not answered" : "Chưa trả lời")
+    );
   }
 
   const progress = Math.round((Math.min(stepIndex, reviewStep) / reviewStep) * 100);
@@ -382,7 +391,7 @@ export function AssessmentWizard({
           aria-valuenow={progress}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Tiến độ"
+          aria-label={language === "en" ? "Progress" : "Tiến độ"}
         >
           <div style={{ width: `${progress}%` }} />
         </div>

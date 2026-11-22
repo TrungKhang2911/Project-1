@@ -10,11 +10,16 @@ from app.core.assessment_store import (
     format_csv_report,
     format_markdown_report,
 )
+from app.core.custom_node_analyzer import CustomNodeAnalyzer
 from app.core.hybrid_manager import HybridRiskManager
 from app.core.kb_manager import KnowledgeBaseManager
 from app.core.pattern_detector import PatternDetector
 from app.schemas.agentic_schema import (
     ClassificationResponse,
+    CustomFlowNodeRequest,
+    CustomFlowNodeResponse,
+    GraphAnalysisRequest,
+    GraphAnalysisResponse,
     QuestionnaireAnswers,
     SavedAssessmentCreate,
     SavedAssessmentRecord,
@@ -43,6 +48,13 @@ def get_pattern_detector(request: Request) -> PatternDetector:
     return detector
 
 
+def get_custom_node_analyzer(request: Request) -> CustomNodeAnalyzer:
+    analyzer = getattr(request.app.state, "custom_node_analyzer", None)
+    if not isinstance(analyzer, CustomNodeAnalyzer):
+        raise RuntimeError("The custom node analyzer is not initialized.")
+    return analyzer
+
+
 def get_assessment_store(request: Request) -> AssessmentStore:
     store = getattr(request.app.state, "assessment_store", None)
     if not isinstance(store, AssessmentStore):
@@ -57,6 +69,24 @@ async def classify_agentic_architecture(
 ) -> ClassificationResponse:
     """Map plain-language questionnaire answers to agentic design patterns."""
     return ClassificationResponse(detection=await detector.detect(payload))
+
+
+@router.post("/agentic/analyze-custom-node", response_model=CustomFlowNodeResponse)
+async def analyze_custom_flow_node(
+    payload: CustomFlowNodeRequest,
+    analyzer: CustomNodeAnalyzer = Depends(get_custom_node_analyzer),
+) -> CustomFlowNodeResponse:
+    """Use Gemini (with deterministic fallback) to suggest risks and parameters for a custom graph node."""
+    return CustomFlowNodeResponse(suggestion=await analyzer.analyze(payload))
+
+
+@router.post("/agentic/analyze-graph", response_model=GraphAnalysisResponse)
+async def analyze_scoring_graph(
+    payload: GraphAnalysisRequest,
+    analyzer: CustomNodeAnalyzer = Depends(get_custom_node_analyzer),
+) -> GraphAnalysisResponse:
+    """Analyze the entire wired 4-layer graph with Gemini to uncover emergent cross-chain risks."""
+    return GraphAnalysisResponse(analysis=await analyzer.analyze_graph(payload))
 
 
 @router.post("/agentic/records", response_model=SavedAssessmentRecord, status_code=201)

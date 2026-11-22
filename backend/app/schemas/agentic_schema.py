@@ -148,6 +148,7 @@ class LLMPatternClassification(StrictModel):
     confidence: float = Field(ge=0.0, le=1.0)
     rationale: str = Field(max_length=1200)
     plain_summary: str = Field(min_length=1, max_length=400)
+    ai_insights: list[str] = Field(default_factory=list, max_length=5)
 
     @field_validator("primary_pattern")
     @classmethod
@@ -162,6 +163,18 @@ class PatternDetection(StrictModel):
     patterns: list[AgenticPattern] = Field(
         description="All applicable patterns, including the primary pattern and "
         "HUMAN_IN_THE_LOOP when a person approves actions."
+    )
+    rule_patterns: list[AgenticPattern] = Field(
+        default_factory=list,
+        description="Patterns deterministically derived from questionnaire rules.",
+    )
+    llm_added_patterns: list[AgenticPattern] = Field(
+        default_factory=list,
+        description="Additional patterns inferred exclusively by the LLM from free-text.",
+    )
+    ai_insights: list[str] = Field(
+        default_factory=list,
+        description="Contextual security insights generated from free-text and scenarios.",
     )
     human_oversight: HumanOversight
     is_multi_agent: bool
@@ -209,3 +222,95 @@ class SavedAssessmentRecord(SavedAssessmentCreate):
 
 class SavedAssessmentsListResponse(StrictModel):
     records: list[SavedAssessmentRecord]
+
+
+RiskKindLiteral = Literal[
+    "injection", "action", "leak", "integrity", "control", "cost"
+]
+
+
+class CustomFlowNodeRequest(StrictModel):
+    """Input for Gemini-assisted analysis of a user-defined graph node."""
+
+    layer: Literal[1, 2, 3]
+    name: str = Field(min_length=1, max_length=120)
+    description: str = Field(min_length=3, max_length=1000)
+    language: Literal["vi", "en"] = "vi"
+
+
+class CustomEmittedRiskSuggestion(StrictModel):
+    risk_id: str = Field(min_length=1, max_length=60)
+    title: str = Field(min_length=1, max_length=200)
+    kind: RiskKindLiteral
+    base_l: int = Field(ge=1, le=5)
+    base_i: int = Field(ge=1, le=5)
+    owasp: list[str] = Field(default_factory=list, max_length=5)
+    nist: list[str] = Field(default_factory=list, max_length=5)
+    applicable_controls: list[str] = Field(default_factory=list, max_length=12)
+
+
+class CustomFlowNodeSuggestion(StrictModel):
+    suggested_code: str = Field(min_length=1, max_length=60)
+    layer: Literal[1, 2, 3]
+    rationale: str = Field(min_length=1, max_length=1000)
+    source: Literal["llm", "fallback"]
+    delta_l: int = Field(default=0, ge=-3, le=3)
+    delta_i: int = Field(default=0, ge=-3, le=3)
+    mult_l: float = Field(default=1.0, ge=0.5, le=2.0)
+    mult_i: float = Field(default=1.0, ge=0.5, le=2.0)
+    discount_w: float = Field(default=0.0, ge=0.0, le=0.8)
+    control_delta_i: int = Field(default=0, ge=-2, le=0)
+    target_kinds: list[RiskKindLiteral] = Field(default_factory=list, max_length=6)
+    emitted_risk: CustomEmittedRiskSuggestion | None = None
+
+
+class CustomFlowNodeResponse(StrictModel):
+    suggestion: CustomFlowNodeSuggestion
+
+
+class GraphNodeSummary(StrictModel):
+    id: str = Field(min_length=1, max_length=80)
+    layer: Literal[1, 2, 3]
+    code: str = Field(min_length=1, max_length=60)
+    label: str = Field(min_length=1, max_length=160)
+    subtitle: str = Field(default="", max_length=300)
+    is_custom: bool = False
+    delta_l: int = Field(default=0, ge=-3, le=3)
+    delta_i: int = Field(default=0, ge=-3, le=3)
+    discount_w: float = Field(default=0.0, ge=0.0, le=0.8)
+
+
+class GraphEdgeSummary(StrictModel):
+    from_id: str = Field(min_length=1, max_length=80)
+    to_id: str = Field(min_length=1, max_length=80)
+
+
+class GraphAnalysisRequest(StrictModel):
+    nodes: list[GraphNodeSummary] = Field(min_length=1, max_length=40)
+    edges: list[GraphEdgeSummary] = Field(default_factory=list, max_length=120)
+    existing_risk_ids: list[str] = Field(default_factory=list, max_length=40)
+    language: Literal["vi", "en"] = "vi"
+
+
+class GraphEmergentRisk(StrictModel):
+    risk_id: str = Field(min_length=1, max_length=60)
+    title: str = Field(min_length=1, max_length=200)
+    kind: RiskKindLiteral
+    base_l: int = Field(ge=1, le=5)
+    base_i: int = Field(ge=1, le=5)
+    final_l: int = Field(ge=1, le=5)
+    final_i: int = Field(ge=1, le=5)
+    owasp: list[str] = Field(default_factory=list, max_length=5)
+    nist: list[str] = Field(default_factory=list, max_length=5)
+    involved_node_ids: list[str] = Field(default_factory=list, max_length=15)
+    rationale: str = Field(min_length=1, max_length=600)
+
+
+class GraphAnalysisResult(StrictModel):
+    source: Literal["llm", "fallback"]
+    executive_summary: str = Field(min_length=1, max_length=1000)
+    ai_risks: list[GraphEmergentRisk] = Field(default_factory=list, max_length=4)
+
+
+class GraphAnalysisResponse(StrictModel):
+    analysis: GraphAnalysisResult

@@ -29,6 +29,7 @@ from app.schemas.agentic_schema import (
     MULTI_AGENT_PATTERNS,
     OVERSIGHT_RANK,
     AgenticPattern,
+    Audience,
     Autonomy,
     Collaboration,
     HumanOversight,
@@ -56,18 +57,18 @@ _AUTONOMY_OVERSIGHT: dict[Autonomy, HumanOversight] = {
     Autonomy.FULL_AUTO: HumanOversight.NONE,
 }
 _COLLABORATION_SUMMARY: dict[Collaboration, str] = {
-    Collaboration.ALONE: "Ứng dụng của bạn có một AI tự xử lý toàn bộ công việc",
-    Collaboration.PIPELINE: "Ứng dụng của bạn có nhiều AI làm việc lần lượt như một dây chuyền",
-    Collaboration.PARALLEL: "Ứng dụng của bạn có nhiều AI làm cùng lúc các phần việc khác nhau rồi gộp kết quả",
-    Collaboration.MANAGER: "Ứng dụng của bạn có một AI 'trưởng nhóm' chia việc cho các AI khác",
-    Collaboration.TEAM_CHAT: "Ứng dụng của bạn có nhiều AI tự trao đổi, bàn bạc với nhau",
-    Collaboration.UNSURE: "Ứng dụng của bạn dùng AI để hỗ trợ công việc",
+    Collaboration.ALONE: "Hệ thống sử dụng một tác nhân AI xử lý toàn bộ quy trình",
+    Collaboration.PIPELINE: "Hệ thống gồm nhiều tác nhân AI xử lý tuần tự theo chuỗi",
+    Collaboration.PARALLEL: "Hệ thống gồm nhiều tác nhân AI xử lý song song và tổng hợp kết quả",
+    Collaboration.MANAGER: "Hệ thống có một tác nhân AI điều phối trung tâm phân công cho các tác nhân con",
+    Collaboration.TEAM_CHAT: "Hệ thống gồm nhiều tác nhân AI phối hợp ngang hàng",
+    Collaboration.UNSURE: "Hệ thống tích hợp AI hỗ trợ xử lý nghiệp vụ",
 }
 _AUTONOMY_SUMMARY: dict[Autonomy, str] = {
-    Autonomy.ANSWER_ONLY: "chỉ trả lời và gợi ý, không tự làm gì",
-    Autonomy.APPROVAL_REQUIRED: "luôn chờ người bấm 'Đồng ý' trước khi làm",
-    Autonomy.PARTIAL_AUTO: "tự làm việc nhỏ và hỏi ý kiến trước việc quan trọng",
-    Autonomy.FULL_AUTO: "tự thực hiện hành động mà không cần hỏi ai",
+    Autonomy.ANSWER_ONLY: "chỉ phản hồi thông tin và không tự thực thi tác vụ",
+    Autonomy.APPROVAL_REQUIRED: "luôn yêu cầu người dùng phê duyệt trước khi thực thi",
+    Autonomy.PARTIAL_AUTO: "tự động xử lý tác vụ thông thường và yêu cầu phê duyệt với tác vụ quan trọng",
+    Autonomy.FULL_AUTO: "tự động thực thi tác vụ không qua bước phê duyệt",
 }
 
 
@@ -82,6 +83,51 @@ def _ordered(patterns: set[AgenticPattern]) -> list[AgenticPattern]:
     return [pattern for pattern in AgenticPattern if pattern in patterns]
 
 
+def build_contextual_insights(
+    answers: QuestionnaireAnswers,
+    primary: AgenticPattern,
+    patterns: set[AgenticPattern],
+    oversight: HumanOversight,
+) -> list[str]:
+    insights: list[str] = []
+    target_name = answers.system_name or "Hệ thống mục tiêu"
+
+    if answers.scenarios:
+        insights.append(
+            f"{target_name} vận hành qua {len(answers.scenarios)} kịch bản nghiệp vụ ({answers.scenarios[0][:80]}), "
+            f"cần kiểm soát ranh giới dữ liệu đầu vào tại từng bước chuyển trạng thái."
+        )
+    elif answers.purpose_details:
+        insights.append(
+            f"Mô tả kiến trúc của {target_name} ({answers.purpose_details[:80]}) cho thấy luồng xử lý cần tách biệt chỉ thị hệ thống và dữ liệu người dùng."
+        )
+
+    if primary in MULTI_AGENT_PATTERNS:
+        insights.append(
+            f"Cấu trúc đa tác nhân ({primary.value}) yêu cầu xác thực schema thông điệp nội bộ và cấp quyền phạm vi hẹp cho từng tác nhân con."
+        )
+    elif AgenticPattern.REACT in patterns:
+        insights.append(
+            "Vòng lặp suy luận và gọi công cụ (ReAct) cần giới hạn danh sách hàm được phép thực thi và áp đặt ngân sách số bước tối đa."
+        )
+
+    if oversight is HumanOversight.NONE and answers.autonomy is Autonomy.FULL_AUTO:
+        insights.append(
+            "Chế độ thực thi tự động hoàn toàn không có cổng phê duyệt thủ công làm tăng rủi ro thao tác ngoài ý muốn khi đầu vào bị nhiễu."
+        )
+    elif answers.audience is Audience.PUBLIC and answers.sensitive_data:
+        insights.append(
+            "Hệ thống mở cho người dùng bên ngoài nhưng có xử lý dữ liệu nhạy cảm, cần áp dụng cơ chế lọc PII và kiểm soát truy cập theo định danh."
+        )
+
+    if not insights:
+        insights.append(
+            f"{target_name} áp dụng mẫu kiến trúc {primary.value}, cần duy trì bộ lọc đầu vào/đầu ra và giám sát nhật ký truy vấn định kỳ."
+        )
+
+    return insights[:3]
+
+
 def _finalize(
     primary: AgenticPattern,
     patterns: set[AgenticPattern],
@@ -90,13 +136,21 @@ def _finalize(
     rationale: str,
     plain_summary: str,
     source: str,
+    rule_patterns: set[AgenticPattern] | None = None,
+    ai_insights: list[str] | None = None,
 ) -> PatternDetection:
     patterns = {primary, *patterns} - {AgenticPattern.HUMAN_IN_THE_LOOP}
     if oversight is not HumanOversight.NONE:
         patterns.add(AgenticPattern.HUMAN_IN_THE_LOOP)
+    ordered_all = _ordered(patterns)
+    base_rules = _ordered(rule_patterns) if rule_patterns is not None else ordered_all
+    llm_added = [p for p in ordered_all if p not in base_rules] if source == "llm" else []
     return PatternDetection(
         primary_pattern=primary,
-        patterns=_ordered(patterns),
+        patterns=ordered_all,
+        rule_patterns=base_rules,
+        llm_added_patterns=llm_added,
+        ai_insights=[item.strip() for item in (ai_insights or []) if item.strip()][:5],
         human_oversight=oversight,
         is_multi_agent=bool(MULTI_AGENT_PATTERNS.intersection(patterns)),
         confidence=round(confidence, 2),
@@ -130,6 +184,7 @@ def detect_with_rules(answers: QuestionnaireAnswers) -> PatternDetection:
         f"autonomy={answers.autonomy.value} (tools={tools}) to primary pattern "
         f"{primary.value} with human_oversight={oversight.value}."
     )
+    insights = build_contextual_insights(answers, primary, patterns, oversight)
     return _finalize(
         primary,
         patterns,
@@ -138,6 +193,8 @@ def detect_with_rules(answers: QuestionnaireAnswers) -> PatternDetection:
         rationale,
         build_plain_summary(answers),
         "rules",
+        rule_patterns=patterns | ({AgenticPattern.HUMAN_IN_THE_LOOP} if oversight is not HumanOversight.NONE else set()),
+        ai_insights=insights,
     )
 
 
@@ -155,6 +212,7 @@ def merge_detections(
     # Do not let the LLM demote a multi-agent system to a single agent.
     if primary not in MULTI_AGENT_PATTERNS and rules.primary_pattern in MULTI_AGENT_PATTERNS:
         primary = rules.primary_pattern
+    merged_insights = llm.ai_insights if llm.ai_insights else rules.ai_insights
     return _finalize(
         primary,
         set(rules.patterns) | llm_patterns,
@@ -163,6 +221,8 @@ def merge_detections(
         llm.rationale.strip() or rules.rationale,
         llm.plain_summary.strip(),
         "llm",
+        rule_patterns=set(rules.patterns),
+        ai_insights=merged_insights,
     )
 
 
@@ -192,6 +252,11 @@ CLASSIFICATION_RESPONSE_SCHEMA: dict[str, Any] = {
         "confidence": {"type": "NUMBER", "minimum": 0, "maximum": 1},
         "rationale": {"type": "STRING"},
         "plain_summary": {"type": "STRING"},
+        "ai_insights": {
+            "type": "ARRAY",
+            "items": {"type": "STRING"},
+            "maxItems": 5,
+        },
     },
     "required": [
         "primary_pattern",
@@ -209,6 +274,7 @@ class PatternDetector:
     REQUEST_TIMEOUT_SECONDS = 20.0
 
     def __init__(self, settings: Settings | None = None) -> None:
+        self._custom_settings = settings is not None
         self.settings = settings or Settings()
 
     async def detect(self, answers: QuestionnaireAnswers) -> PatternDetection:
@@ -227,8 +293,9 @@ class PatternDetector:
     async def _classify_with_llm(
         self, answers: QuestionnaireAnswers
     ) -> LLMPatternClassification | None:
-        api_key = self.settings.LLM_API_KEY
-        model_name = self.settings.LLM_MODEL_NAME.strip()
+        active_settings = self.settings if self._custom_settings else Settings()
+        api_key = active_settings.LLM_API_KEY
+        model_name = active_settings.LLM_MODEL_NAME.strip()
         if api_key is None or not api_key.get_secret_value().strip() or not model_name:
             logger.info("LLM not configured; using rule-based pattern detection.")
             return None
@@ -271,4 +338,3 @@ class PatternDetector:
                 type(exc).__name__,
             )
         return None
-

@@ -1,9 +1,14 @@
 import { useState } from "react";
 
 import { UI_STRINGS } from "../agentic/preferences";
-import type { ReportedRisk, RiskReport as RiskReportData, Severity } from "../agentic/riskMap";
-import { SEVERITY_LABELS } from "../agentic/riskMap";
-import type { Language } from "../types";
+import {
+  buildRiskReport,
+  getSeverityLabel,
+  type ReportedRisk,
+  type RiskReport as RiskReportData,
+  type Severity,
+} from "../agentic/riskMap";
+import type { AgenticPattern, Language } from "../types";
 
 interface RiskReportProps {
   report: RiskReportData;
@@ -21,12 +26,21 @@ const SEVERITY_STYLE: Record<Severity, { color: string; text: string; bg: string
   Critical: { color: "#b91c1c", text: "#ffffff", bg: "#fee2e2" },
 };
 
-const OVERALL_MESSAGE: Record<Severity, string> = {
-  Low: "Ứng dụng của bạn có mức rủi ro thấp. Hãy tiếp tục theo dõi định kỳ.",
-  Medium: "Ứng dụng của bạn có một số rủi ro cần xử lý bằng các biện pháp cơ bản.",
-  High: "Ứng dụng của bạn có rủi ro cao. Nên khắc phục trước khi đưa vào sử dụng chính thức.",
-  Critical:
-    "Ứng dụng của bạn có rủi ro nghiêm trọng. Nên tạm dừng triển khai và điều chỉnh lại cách AI hoạt động.",
+const OVERALL_MESSAGE: Record<Language, Record<Severity, string>> = {
+  vi: {
+    Low: "Mức độ rủi ro thấp. Duy trì giám sát và rà soát định kỳ.",
+    Medium: "Mức độ rủi ro trung bình. Cần áp dụng các biện pháp kiểm soát cơ bản trước khi mở rộng quy mô.",
+    High: "Mức độ rủi ro cao. Cần khắc phục các điểm yếu trọng yếu trước khi vận hành chính thức.",
+    Critical:
+      "Mức độ rủi ro nghiêm trọng. Khuyến nghị tạm dừng triển khai để điều chỉnh kiến trúc và phân quyền.",
+  },
+  en: {
+    Low: "Low overall risk. Maintain routine monitoring and periodic security reviews.",
+    Medium: "Medium overall risk. Apply baseline security controls before scaling deployment.",
+    High: "High overall risk. Address priority vulnerabilities before production launch.",
+    Critical:
+      "Critical overall risk. Pause deployment and redesign agent permissions and guardrails.",
+  },
 };
 
 const SEVERITY_ORDER: Severity[] = ["Critical", "High", "Medium", "Low"];
@@ -41,11 +55,35 @@ function SeverityDot({ severity }: { severity: Severity }): JSX.Element {
   );
 }
 
-function SeverityBadge({ severity }: { severity: Severity }): JSX.Element {
+function SeverityBadge({
+  severity,
+  language,
+}: {
+  severity: Severity;
+  language: Language;
+}): JSX.Element {
   const style = SEVERITY_STYLE[severity];
   return (
     <span className="severity-badge" style={{ backgroundColor: style.color, color: style.text }}>
-      Mức độ: {SEVERITY_LABELS[severity]}
+      {getSeverityLabel(severity, language)}
+    </span>
+  );
+}
+
+function SourceBadge({
+  kind,
+  label,
+}: {
+  kind: "system" | "ai" | "hybrid";
+  label: string;
+}): JSX.Element {
+  const icon = kind === "ai" ? "✦" : kind === "hybrid" ? "✦/▣" : "▣";
+  return (
+    <span className={`source-badge source-badge--${kind}`}>
+      <span className="source-badge__icon" aria-hidden="true">
+        {icon}
+      </span>
+      <span>{label}</span>
     </span>
   );
 }
@@ -54,25 +92,64 @@ function RiskItem({
   risk,
   index,
   whatToDoLabel,
+  language,
 }: {
   risk: ReportedRisk;
   index: number;
   whatToDoLabel: string;
+  language: Language;
 }): JSX.Element {
+  const isEn = language === "en";
+  const isAiInferred = risk.origin === "ai_inferred_pattern";
+  const isDedicatedAiRisk = risk.id.startsWith("AI-");
   return (
     <article
-      className="report-risk"
+      className={`report-risk${isAiInferred ? " report-risk--ai" : " report-risk--system"}`}
       style={{
         borderLeftColor: SEVERITY_STYLE[risk.severity].color,
         animationDelay: `${index * 60}ms`,
       }}
     >
       <header>
-        <h4>
-          <SeverityDot severity={risk.severity} />
-          <span>{risk.title}</span>
-        </h4>
-        <SeverityBadge severity={risk.severity} />
+        <div>
+          <h4>
+            <SeverityDot severity={risk.severity} />
+            <span>
+              {isDedicatedAiRisk ? `${risk.id}: ${risk.title}` : risk.title}
+            </span>
+          </h4>
+          <div className="report-risk__origin-row">
+            {isDedicatedAiRisk ? (
+              <>
+                <SourceBadge
+                  kind="ai"
+                  label={isEn ? "AI Analysis" : "Đánh giá của AI"}
+                />
+                <SourceBadge
+                  kind="system"
+                  label={`${risk.likelihood}×${risk.impact} = ${risk.score}/25`}
+                />
+              </>
+            ) : isAiInferred ? (
+              <>
+                <SourceBadge
+                  kind="ai"
+                  label={isEn ? "AI-detected pattern" : "Mẫu hình do AI phát hiện"}
+                />
+                <SourceBadge
+                  kind="system"
+                  label={isEn ? "System 5×5 scoring" : "Điểm chuẩn hệ thống"}
+                />
+              </>
+            ) : (
+              <SourceBadge
+                kind="system"
+                label={isEn ? "System rule" : "Quy tắc hệ thống"}
+              />
+            )}
+          </div>
+        </div>
+        <SeverityBadge severity={risk.severity} language={language} />
       </header>
       <p>{risk.explanation}</p>
 
@@ -97,7 +174,7 @@ function RiskItem({
 }
 
 export function RiskReport({
-  report,
+  report: rawReport,
   savedId,
   apiBaseUrl,
   language = "vi",
@@ -105,10 +182,27 @@ export function RiskReport({
   onRestart,
 }: RiskReportProps): JSX.Element {
   const strings = UI_STRINGS[language];
+  const isEn = language === "en";
+  const report = buildRiskReport(rawReport.detection, rawReport.answers, [], language);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [riskFilter, setRiskFilter] = useState<"all" | "system" | "ai">("all");
   const overall = SEVERITY_STYLE[report.overallSeverity];
   const systemTitle = report.answers.system_name ?? strings.unnamedSystem;
+
+  const isLlmActive = report.detection.source === "llm";
+  const llmAddedSet = new Set<AgenticPattern>(report.detection.llm_added_patterns ?? []);
+  const aiAnalysis = report.aiAnalysis;
+  const systemRiskCount = report.risks.filter((r) => r.origin === "system_rule").length;
+  const aiTriggeredRiskCount = report.risks.filter(
+    (r) => r.origin === "ai_inferred_pattern",
+  ).length;
+
+  const filteredRisks = report.risks.filter((risk) => {
+    if (riskFilter === "system") return risk.origin === "system_rule";
+    if (riskFilter === "ai") return risk.origin === "ai_inferred_pattern";
+    return true;
+  });
 
   async function handleSave(): Promise<string | null> {
     if (savedId) return savedId;
@@ -116,10 +210,18 @@ export function RiskReport({
     setSaveMessage(null);
     try {
       const id = await onSave();
-      setSaveMessage(`Đã lưu kết quả đánh giá (Mã: ${id}).`);
+      setSaveMessage(
+        isEn ? `Assessment saved (ID: ${id}).` : `Đã lưu báo cáo (Mã: ${id}).`,
+      );
       return id;
     } catch (err: unknown) {
-      setSaveMessage(err instanceof Error ? err.message : "Không thể lưu kết quả lúc này.");
+      setSaveMessage(
+        err instanceof Error
+          ? err.message
+          : isEn
+            ? "Unable to save report right now."
+            : "Không thể lưu kết quả lúc này.",
+      );
       return null;
     } finally {
       setSaving(false);
@@ -182,21 +284,31 @@ export function RiskReport({
       {saveMessage && <p className="report__save-banner">{saveMessage}</p>}
 
       <div className="report__overall" style={{ borderColor: overall.color }}>
-        <p className="report__overall-label">{strings.overallRiskLabel}</p>
+        <div className="report__section-top">
+          <p className="report__overall-label">{strings.overallRiskLabel}</p>
+          <SourceBadge
+            kind="system"
+            label={isEn ? "System 5×5 Matrix" : "Hệ thống · Ma trận 5×5"}
+          />
+        </div>
         <p className="report__overall-value" style={{ color: overall.color }}>
           <SeverityDot severity={report.overallSeverity} />
           <span>
             {report.overallSeverityLabel} ({report.overallScore}/25)
           </span>
         </p>
-        <p>{OVERALL_MESSAGE[report.overallSeverity]}</p>
-        <ul className="report__counts" aria-label="Số rủi ro theo mức độ">
+        <p>{OVERALL_MESSAGE[language][report.overallSeverity]}</p>
+        <ul
+          className="report__counts"
+          aria-label={isEn ? "Risks by severity" : "Số rủi ro theo mức độ"}
+        >
           {SEVERITY_ORDER.filter((severity) => report.countsBySeverity[severity] > 0).map(
             (severity) => (
               <li key={severity}>
                 <SeverityDot severity={severity} />
                 <span>
-                  {report.countsBySeverity[severity]} {SEVERITY_LABELS[severity].toLowerCase()}
+                  {report.countsBySeverity[severity]}{" "}
+                  {getSeverityLabel(severity, language).toLowerCase()}
                 </span>
               </li>
             ),
@@ -204,7 +316,6 @@ export function RiskReport({
         </ul>
       </div>
 
-      {/* Ghi nhận mô hình mẫu tích hợp AI (Google Cloud Agentic AI System Patterns) */}
       <div className="report__pattern-box">
         <div className="report__pattern-header">
           <div>
@@ -214,26 +325,78 @@ export function RiskReport({
               <small>({report.primaryPatternInfo.googleCloudName})</small>
             </h3>
           </div>
-          <span className="pattern-pill">{report.primaryPatternInfo.code}</span>
+          <div className="report__pattern-badges">
+            {isLlmActive && llmAddedSet.has(report.detection.primary_pattern) ? (
+              <SourceBadge
+                kind="ai"
+                label={isEn ? "AI-Inferred" : "AI suy luận"}
+              />
+            ) : isLlmActive ? (
+              <SourceBadge
+                kind="hybrid"
+                label={isEn ? "System + AI" : "Hệ thống + AI"}
+              />
+            ) : (
+              <SourceBadge
+                kind="system"
+                label={isEn ? "System Rule" : "Quy tắc hệ thống"}
+              />
+            )}
+            <span className="pattern-pill">{report.primaryPatternInfo.code}</span>
+          </div>
         </div>
         <p>{report.primaryPatternInfo.description}</p>
         {report.detectedPatternsInfo.length > 1 && (
           <div className="report__subpatterns">
             <strong>{strings.combinedPatternsLabel}</strong>
             <ul>
-              {report.detectedPatternsInfo.map((item) => (
-                <li key={item.code}>
-                  <strong>{item.friendlyName}</strong> ({item.googleCloudName}): {item.description}
-                </li>
-              ))}
+              {report.detectedPatternsInfo.map((item) => {
+                const addedByAi = isLlmActive && llmAddedSet.has(item.code);
+                return (
+                  <li key={item.code}>
+                    <div className="report__subpattern-item">
+                      <div>
+                        <strong>{item.friendlyName}</strong> ({item.googleCloudName}):{" "}
+                        {item.description}
+                      </div>
+                      <SourceBadge
+                        kind={addedByAi ? "ai" : "system"}
+                        label={
+                          addedByAi
+                            ? isEn
+                              ? "AI-inferred"
+                              : "AI bổ sung"
+                            : isEn
+                              ? "System rule"
+                              : "Quy tắc hệ thống"
+                        }
+                      />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
       </div>
 
       <div className="report__summary">
-        <h3>{strings.systemSummaryTitle}</h3>
-        <p>{report.summary}</p>
+        <div className="report__section-top">
+          <h3>{strings.systemSummaryTitle}</h3>
+          <SourceBadge
+            kind={isLlmActive ? "ai" : "system"}
+            label={
+              isLlmActive
+                ? isEn
+                  ? "AI Summary"
+                  : "Tóm tắt bởi AI"
+                : isEn
+                  ? "System Summary"
+                  : "Tóm tắt hệ thống"
+            }
+          />
+        </div>
+        <p className={isLlmActive ? "ai-highlight-text" : undefined}>{report.summary}</p>
         {report.answers.purpose_details && (
           <p>
             <strong>{strings.detailedDescLabel}</strong> {report.answers.purpose_details}
@@ -249,12 +412,55 @@ export function RiskReport({
             </ol>
           </div>
         )}
-        <p className="report__oversight">{report.oversightNote}</p>
+        <p className="report__oversight">
+          <SourceBadge
+            kind="system"
+            label={isEn ? "System Policy" : "Quy tắc hệ thống"}
+          />{" "}
+          <span>{report.oversightNote}</span>
+        </p>
       </div>
+
+      {/* High-level AI Overview (without duplicating the individual AI risk cards below) */}
+      <section
+        className="report__ai-box ai-surface"
+        aria-label={isEn ? "AI Executive Overview" : "Đánh giá tổng quan từ AI"}
+      >
+        <div className="report__section-top">
+          <div>
+            <span className="report__pattern-eyebrow">
+              {isEn ? "AI EXECUTIVE OVERVIEW" : "TỔNG QUAN TỪ AI"}
+            </span>
+            <h3>
+              {isEn
+                ? "✦ AI Contextual & Scenario Overview"
+                : "✦ Đánh giá tổng quan ngữ cảnh & kịch bản từ AI"}
+            </h3>
+          </div>
+          <SourceBadge
+            kind="ai"
+            label={`${aiAnalysis.engineLabel} · ${Math.round(aiAnalysis.confidence * 100)}%`}
+          />
+        </div>
+
+        <p className="ai-highlight-text">{aiAnalysis.executiveSummary}</p>
+
+        <ul className="report__ai-insights">
+          {aiAnalysis.scenarioObservations.map((insight) => (
+            <li key={insight}>{insight}</li>
+          ))}
+        </ul>
+      </section>
 
       {report.topActions.length > 0 && (
         <div className="report__top-actions">
-          <h3>{strings.topActionsTitle}</h3>
+          <div className="report__section-top">
+            <h3>{strings.topActionsTitle}</h3>
+            <SourceBadge
+              kind="system"
+              label={isEn ? "System Priority" : "Hệ thống xếp hạng"}
+            />
+          </div>
           <ol>
             {report.topActions.map((action) => (
               <li key={action}>{action}</li>
@@ -264,15 +470,49 @@ export function RiskReport({
       )}
 
       <div className="report__risks">
-        <h3>{strings.riskDetailsTitle}</h3>
-        {report.risks.map((risk, index) => (
-          <RiskItem
-            key={risk.id}
-            risk={risk}
-            index={index}
-            whatToDoLabel={strings.whatToDoLabel}
-          />
-        ))}
+        <div className="report__risks-header">
+          <h3>{strings.riskDetailsTitle}</h3>
+          <div className="source-filter-bar" role="group" aria-label="Filter risks by source">
+            <button
+              type="button"
+              className={`source-filter-btn${riskFilter === "all" ? " source-filter-btn--active" : ""}`}
+              onClick={() => setRiskFilter("all")}
+            >
+              {isEn ? `All (${report.risks.length})` : `Tất cả (${report.risks.length})`}
+            </button>
+            <button
+              type="button"
+              className={`source-filter-btn${riskFilter === "system" ? " source-filter-btn--active" : ""}`}
+              onClick={() => setRiskFilter("system")}
+            >
+              ▣ {isEn ? `System (${systemRiskCount})` : `Hệ thống (${systemRiskCount})`}
+            </button>
+            <button
+              type="button"
+              className={`source-filter-btn${riskFilter === "ai" ? " source-filter-btn--active" : ""}`}
+              onClick={() => setRiskFilter("ai")}
+            >
+              ✦ {isEn ? `AI Analysis (${aiTriggeredRiskCount})` : `Phân tích AI (${aiTriggeredRiskCount})`}
+            </button>
+          </div>
+        </div>
+        {filteredRisks.length === 0 ? (
+          <p className="report__empty-filter">
+            {isEn
+              ? "No risks match this source filter."
+              : "Không có mục nào thuộc bộ lọc hiện tại."}
+          </p>
+        ) : (
+          filteredRisks.map((risk, index) => (
+            <RiskItem
+              key={risk.id}
+              risk={risk}
+              index={index}
+              whatToDoLabel={strings.whatToDoLabel}
+              language={language}
+            />
+          ))
+        )}
       </div>
 
       <details className="report__technical">
@@ -282,8 +522,11 @@ export function RiskReport({
           <br />
           <strong>Detected patterns:</strong> {report.technical.patterns.join(", ")}
           <br />
-          <strong>Classifier:</strong> {report.technical.source === "llm" ? "LLM + rules" : "Rules only"}{" "}
-          (confidence {Math.round(report.technical.confidence * 100)}%)
+          <strong>Classifier source:</strong>{" "}
+          {report.technical.source === "llm"
+            ? "✦ Gemini LLM + ▣ System Rule Floor"
+            : "✦ AI Contextual Analyzer + ▣ System Rule Engine"}{" "}
+          (confidence {Math.round(aiAnalysis.confidence * 100)}%)
           {report.technical.rationale && (
             <>
               <br />
@@ -295,6 +538,7 @@ export function RiskReport({
           <thead>
             <tr>
               <th scope="col">Risk</th>
+              <th scope="col">Source</th>
               <th scope="col">L×I</th>
               <th scope="col">References</th>
               <th scope="col">Triggered by</th>
@@ -303,7 +547,14 @@ export function RiskReport({
           <tbody>
             {report.risks.map((risk) => (
               <tr key={risk.id}>
-                <td>{risk.technical.name}</td>
+                <td>
+                  <code>{risk.id}</code> — {risk.technical.name}
+                </td>
+                <td>
+                  {risk.origin === "ai_inferred_pattern"
+                    ? "✦ AI Analysis + ▣ System Score"
+                    : "▣ System Rule"}
+                </td>
                 <td>
                   {risk.likelihood}×{risk.impact} = {risk.score} (base {risk.technical.baseScore})
                 </td>

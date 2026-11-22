@@ -61,6 +61,7 @@ class LLMRiskAnalyzer:
     REQUEST_TIMEOUT_SECONDS = 20.0
 
     def __init__(self, settings: Settings | None = None) -> None:
+        self._custom_settings = settings is not None
         self.settings = settings or Settings()
 
     async def analyze(
@@ -129,12 +130,13 @@ class LLMRiskAnalyzer:
         min_items: int | None = None,
         max_items: int | None = None,
     ) -> list[EvaluatedRiskResult]:
-        api_key = self.settings.LLM_API_KEY
+        active_settings = self.settings if self._custom_settings else Settings()
+        api_key = active_settings.LLM_API_KEY
         if api_key is None or not api_key.get_secret_value().strip():
             logger.info("Skipping LLM risk analysis because LLM_API_KEY is unset.")
             return []
 
-        model_name = self.settings.LLM_MODEL_NAME.strip()
+        model_name = active_settings.LLM_MODEL_NAME.strip()
         if not model_name:
             logger.error("Skipping LLM risk analysis because LLM_MODEL_NAME is empty.")
             return []

@@ -106,6 +106,9 @@ export type HumanOversight = "none" | "partial" | "full";
 export interface PatternDetection {
   primary_pattern: AgenticPattern;
   patterns: AgenticPattern[];
+  rule_patterns?: AgenticPattern[];
+  llm_added_patterns?: AgenticPattern[];
+  ai_insights?: string[];
   human_oversight: HumanOversight;
   is_multi_agent: boolean;
   confidence: number;

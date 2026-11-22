@@ -7,6 +7,8 @@ import {
 } from "./agentic/preferences";
 import {
   buildRiskReport,
+  getSeverityLabel,
+  localizePatternInfo,
   PATTERN_DISPLAY_INFO,
   type RiskReport as RiskReportData,
 } from "./agentic/riskMap";
@@ -16,6 +18,7 @@ import { RiskReport } from "./components/RiskReport";
 import { SettingsBar } from "./components/SettingsBar";
 import type {
   ClassificationResponse,
+  Language,
   QuestionnaireAnswers,
   SavedAssessmentCreate,
   SavedAssessmentRecord,
@@ -26,7 +29,11 @@ import type {
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
 
-async function classify(answers: QuestionnaireAnswers): Promise<ClassificationResponse> {
+async function classify(
+  answers: QuestionnaireAnswers,
+  language: Language,
+): Promise<ClassificationResponse> {
+  const isEn = language === "en";
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}/api/v1/agentic/classify`, {
@@ -35,13 +42,21 @@ async function classify(answers: QuestionnaireAnswers): Promise<ClassificationRe
       body: JSON.stringify(answers),
     });
   } catch {
-    throw new Error("Không kết nối được tới máy chủ đánh giá. Vui lòng thử lại sau.");
+    throw new Error(
+      isEn
+        ? "Unable to connect to the assessment server. Please try again later."
+        : "Không kết nối được tới máy chủ đánh giá. Vui lòng thử lại sau.",
+    );
   }
   if (!response.ok) {
     throw new Error(
       response.status === 422
-        ? "Câu trả lời chưa hợp lệ. Vui lòng kiểm tra lại."
-        : `Máy chủ đang gặp sự cố (mã ${response.status}). Vui lòng thử lại sau.`,
+        ? isEn
+          ? "Invalid input data. Please review your answers."
+          : "Câu trả lời chưa hợp lệ. Vui lòng kiểm tra lại."
+        : isEn
+          ? `Server error (status ${response.status}). Please try again later.`
+          : `Máy chủ đang gặp sự cố (mã ${response.status}). Vui lòng thử lại sau.`,
     );
   }
   return (await response.json()) as ClassificationResponse;
@@ -108,7 +123,11 @@ export function App(): JSX.Element {
       body: JSON.stringify(toSavePayload(currentReport)),
     });
     if (!response.ok) {
-      throw new Error("Không thể lưu kết quả đánh giá trên máy chủ.");
+      throw new Error(
+        preferences.language === "en"
+          ? "Unable to save assessment record on the server."
+          : "Không thể lưu kết quả đánh giá trên máy chủ.",
+      );
     }
     const saved = (await response.json()) as SavedAssessmentRecord;
     setSavedId(saved.assessment_id);
@@ -120,8 +139,8 @@ export function App(): JSX.Element {
   }
 
   async function submitAnswers(answers: QuestionnaireAnswers): Promise<void> {
-    const { detection } = await classify(answers);
-    const built = buildRiskReport(detection, answers);
+    const { detection } = await classify(answers, preferences.language);
+    const built = buildRiskReport(detection, answers, [], preferences.language);
     setReport(built);
     setSavedId(null);
     try {
@@ -144,7 +163,7 @@ export function App(): JSX.Element {
 
   function openSavedRecord(record: SavedAssessmentRecord): void {
     setPreferences((prev) => ({ ...prev, mode: "normal" }));
-    setReport(buildRiskReport(record.detection, record.answers));
+    setReport(buildRiskReport(record.detection, record.answers, [], preferences.language));
     setSavedId(record.assessment_id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -211,7 +230,14 @@ export function App(): JSX.Element {
           </div>
           <ul className="history-list">
             {history.map((item) => {
-              const patternInfo = PATTERN_DISPLAY_INFO[item.detection.primary_pattern];
+              const patternInfo = localizePatternInfo(
+                PATTERN_DISPLAY_INFO[item.detection.primary_pattern],
+                preferences.language,
+              );
+              const severityLabel = getSeverityLabel(
+                item.overall_severity,
+                preferences.language,
+              );
               const isCurrent = savedId === item.assessment_id;
               return (
                 <li
@@ -225,7 +251,7 @@ export function App(): JSX.Element {
                     </strong>
                     <small>
                       {patternInfo.friendlyName} ·{" "}
-                      <strong>{item.overall_severity_label}</strong> ({item.overall_score}/25) ·{" "}
+                      <strong>{severityLabel}</strong> ({item.overall_score}/25) ·{" "}
                       {new Date(item.created_at).toLocaleString(
                         preferences.language === "en" ? "en-US" : "vi-VN",
                       )}

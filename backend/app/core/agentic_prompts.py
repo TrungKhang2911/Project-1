@@ -108,10 +108,12 @@ Return only one JSON object that matches the response schema:
 - human_oversight: "none" | "partial" | "full"
 - confidence: number between 0 and 1
 - rationale: 1-3 short English sentences for engineers explaining the mapping
-- plain_summary: ONE sentence in Vietnamese, at most 40 words, describing how the \
-application works in everyday words for a non-technical reader. Do not use technical \
-terms such as agent, pattern, ReAct, LLM, API, RAG, vector, coordinator, swarm, \
-pipeline, or prompt. Example: "Ứng dụng của bạn có một AI 'trưởng nhóm' chia việc cho \
-các AI khác, các AI này có thể tự gửi email nhưng bạn luôn được hỏi trước khi gửi."
+- plain_summary: ONE concise sentence in Vietnamese, at most 35 words, describing how \
+the system operates in clear, professional language without quotation marks. Do not use \
+raw code identifiers. Example: Hệ thống sử dụng một tác nhân điều phối phân công tác vụ \
+cho các tác nhân chuyên biệt, có khả năng gửi email nhưng luôn yêu cầu phê duyệt trước khi thực thi.
+- ai_insights: array of 1 to 3 concise Vietnamese sentences (each at most 180 characters, \
+no quotation marks) highlighting specific security observations tailored to the user's \
+system_name, purpose_details, and scenarios.
 """
 

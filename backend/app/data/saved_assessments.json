@@ -1,20 +1,259 @@
 [
   {
     "answers": {
+      "system_name": null,
+      "purpose": "content",
+      "purpose_details": null,
+      "scenarios": [],
+      "collaboration": "parallel",
+      "autonomy": "approval_required",
+      "resources": [
+        "company_data",
+        "external_tools"
+      ],
+      "audience": "internal",
+      "sensitive_data": []
+    },
+    "detection": {
+      "primary_pattern": "PARALLEL",
+      "patterns": [
+        "REACT",
+        "PARALLEL",
+        "HUMAN_IN_THE_LOOP"
+      ],
+      "rule_patterns": [
+        "REACT",
+        "PARALLEL",
+        "HUMAN_IN_THE_LOOP"
+      ],
+      "llm_added_patterns": [],
+      "ai_insights": [
+        "Việc sử dụng dữ liệu công ty trong quy trình song song đòi hỏi kiểm soát truy cập chặt chẽ để tránh rò rỉ thông tin.",
+        "Cần đảm bảo các công cụ bên ngoài được tích hợp an toàn để ngăn chặn việc thực thi mã độc hoặc truy cập trái phép vào hệ thống."
+      ],
+      "human_oversight": "full",
+      "is_multi_agent": true,
+      "confidence": 0.9,
+      "rationale": "The system uses parallel processing for content generation and requires human approval for actions, while the use of external tools and company data implies a REACT capability.",
+      "plain_summary": "Hệ thống thực hiện nhiều tác vụ tạo nội dung song song bằng cách sử dụng dữ liệu công ty và các công cụ bên ngoài, với mọi kết quả đầu ra đều yêu cầu sự phê duyệt của con người.",
+      "source": "llm"
+    },
+    "overall_score": 16,
+    "overall_severity": "High",
+    "overall_severity_label": "Cao",
+    "oversight_note": "Cơ chế kiểm soát: Hệ thống yêu cầu phê duyệt trước mọi thao tác thực thi, giúp giảm đáng kể rủi ro tự động hóa.",
+    "top_actions": [
+      "Áp dụng kiểm tra tham số chặt chẽ và giới hạn đặc quyền tối thiểu giữa bước tra cứu và bước gọi công cụ.",
+      "Cô lập vùng nhớ ngữ cảnh cho từng tác vụ và từng phiên người dùng.",
+      "Che dấu hoặc ẩn thông tin định danh và dữ liệu thẻ trước khi chuyển cho AI xử lý."
+    ],
+    "risks": [
+      {
+        "id": "AI-02",
+        "title": "Rủi ro chuỗi liên kết dữ liệu và công cụ liên thành phần",
+        "explanation": "Sự kết hợp giữa mô hình đa tác nhân xử lý song song và tài nguyên tích hợp (company_data, external_tools) tạo ra đường dẫn liên hoàn, cho phép dữ liệu truy xuất không tin cậy kích hoạt công cụ hoặc làm lộ bản ghi nhạy cảm.",
+        "likelihood": 4,
+        "impact": 4,
+        "score": 16,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Áp dụng kiểm tra tham số chặt chẽ và giới hạn đặc quyền tối thiểu giữa bước tra cứu và bước gọi công cụ.",
+          "Che dấu trường dữ liệu nhạy cảm trước khi chuyển bản ghi sang công cụ hoặc tác nhân kế tiếp."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "CROSS_TASK_LEAK",
+        "title": "Rò rỉ ngữ cảnh giữa các nhánh song song",
+        "explanation": "Nhiều tác nhân xử lý đồng thời trên cùng vùng nhớ có thể làm lộ dữ liệu của tác vụ hoặc người dùng này sang kết quả của tác vụ khác.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Cô lập vùng nhớ ngữ cảnh cho từng tác vụ và từng phiên người dùng.",
+          "Rà soát và loại bỏ thông tin nhạy cảm tại bước tổng hợp kết quả."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "CUSTOMER_DATA_LEAK",
+        "title": "Rò rỉ hoặc ghi đè dữ liệu nghiệp vụ",
+        "explanation": "Khi kết nối trực tiếp với cơ sở dữ liệu khách hàng và vận hành, hệ thống có nguy cơ bị khai thác để trích xuất thông tin trái phép hoặc cập nhật sai dữ liệu.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Che dấu hoặc ẩn thông tin định danh và dữ liệu thẻ trước khi chuyển cho AI xử lý.",
+          "Ưu tiên kết nối ở chế độ chỉ đọc, kiểm soát chặt các lệnh ghi hoặc xóa.",
+          "Ghi nhận nhật ký kiểm toán đối với mọi truy vấn dữ liệu."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "AI-01",
+        "title": "Thao túng ngữ cảnh theo kịch bản vận hành",
+        "explanation": "Trong kịch bản vận hành của Hệ thống mục tiêu (luồng nghiệp vụ chính), dữ liệu đầu vào bất thường qua nhiều lượt tương tác có thể làm lệch mục tiêu xử lý và vượt qua ràng buộc nghiệp vụ.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Tách biệt dữ liệu đầu vào trong kịch bản khỏi chỉ thị hệ thống bằng cấu trúc phân cách rõ ràng.",
+          "Kiểm tra tính hợp lệ của trạng thái nghiệp vụ tại từng bước chuyển tiếp trong quy trình."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "PROMPT_INJECTION",
+        "title": "Thao túng chỉ thị đầu vào",
+        "explanation": "Người dùng có thể nhập nội dung được cấu trúc chủ đích nhằm vượt qua quy tắc kiểm soát, buộc hệ thống phản hồi trái phép hoặc tiết lộ cấu hình nội bộ.",
+        "likelihood": 4,
+        "impact": 3,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Áp dụng bộ lọc kiểm duyệt đầu vào và đầu ra trước khi hiển thị kết quả.",
+          "Thực hiện kiểm thử với các mẫu câu vượt rào phổ biến trước khi vận hành.",
+          "Không lưu trữ mật khẩu hoặc khóa bí mật trong chỉ thị hệ thống."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "TOOL_HIJACK",
+        "title": "Thực thi công cụ ngoài ý muốn",
+        "explanation": "Khi AI có quyền tự gọi công cụ hoặc thao tác dữ liệu, đầu vào độc hại có thể điều hướng hệ thống thực hiện tác vụ ngoài phạm vi cho phép.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Chỉ cấp quyền truy cập tối thiểu đối với các công cụ thực sự cần thiết.",
+          "Yêu cầu phê duyệt thủ công đối với các tác vụ quan trọng như thanh toán, xóa dữ liệu hoặc gửi thư ra ngoài.",
+          "Thiết lập hạn mức tần suất và giá trị cho từng loại thao tác."
+        ],
+        "adjustments": [
+          "Giảm mức độ rủi ro do mọi tác vụ đều yêu cầu phê duyệt thủ công."
+        ]
+      },
+      {
+        "id": "RUNAWAY_LOOP",
+        "title": "Vòng lặp thực thi không giới hạn",
+        "explanation": "Hệ thống tự lặp lại quá trình suy luận và gọi công cụ khi gặp tình huống bất thường, gây tiêu hao tài nguyên và làm chậm dịch vụ.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Giới hạn số bước thực thi tối đa và thời gian chờ cho mỗi yêu cầu.",
+          "Thiết lập hạn mức chi phí theo ngày và cảnh báo khi vượt ngưỡng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "MISINFORMATION",
+        "title": "Phản hồi thông tin thiếu chính xác",
+        "explanation": "Mô hình có thể tạo ra thông tin sai lệch nhưng có văn phong thuyết phục, dẫn đến sai sót nếu người dùng áp dụng trực tiếp mà không đối chiếu.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Gắn nhãn rõ ràng đối với các nội dung do hệ thống AI tự động tạo ra.",
+          "Yêu cầu trích dẫn nguồn dữ liệu gốc đối với các thông tin quan trọng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "AI-03",
+        "title": "Rủi ro lệch hướng quyết định tự trị và lỗ hổng giám sát",
+        "explanation": "Với mức độ giám sát con người là full trên cấu trúc đa tác nhân, sai lệch tích lũy hoặc thao tác chưa xác thực có thể làm thay đổi trạng thái hệ thống ngoài ý muốn.",
+        "likelihood": 2,
+        "impact": 4,
+        "score": 8,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Thiết lập cổng kiểm tra chính sách cố định trước mọi thao tác làm thay đổi dữ liệu hoặc trạng thái.",
+          "Lưu nhật ký bất biến cho toàn bộ các bước suy luận và chuyển giao tác vụ giữa các tác nhân."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "MERGE_CORRUPTION",
+        "title": "Sai lệch kết quả khi tổng hợp",
+        "explanation": "Khi hợp nhất đầu ra từ nhiều nhánh xử lý song song, dữ liệu sai từ một nhánh có thể làm lệch toàn bộ kết quả cuối cùng.",
+        "likelihood": 3,
+        "impact": 2,
+        "score": 6,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Đối chiếu chéo kết quả giữa các nhánh và cảnh báo khi phát hiện mâu thuẫn."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "APPROVAL_FATIGUE",
+        "title": "Giảm hiệu quả phê duyệt thủ công",
+        "explanation": "Cơ chế chờ người phê duyệt giúp giảm rủi ro tự động hóa, nhưng nếu số lượng yêu cầu quá lớn, người duyệt dễ xác nhận theo quán tính mà không kiểm tra kỹ.",
+        "likelihood": 3,
+        "impact": 2,
+        "score": 6,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Chỉ yêu cầu phê duyệt thủ công đối với các tác vụ có mức độ ảnh hưởng cao.",
+          "Hiển thị tóm tắt rõ nội dung thao tác, đối tượng nhận và phạm vi tác động trên màn hình duyệt."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "EXCESSIVE_AGENCY",
+        "title": "Cấp quyền quá mức cho công cụ tích hợp",
+        "explanation": "Hệ thống được kết nối với email, lịch hoặc cổng thanh toán với quyền hạn rộng có thể gây thiệt hại thực tế nếu phát sinh lỗi xử lý.",
+        "likelihood": 1,
+        "impact": 5,
+        "score": 5,
+        "severity": "Low",
+        "severityLabel": "Thấp",
+        "recommendations": [
+          "Áp dụng nguyên tắc đặc quyền tối thiểu, ví dụ chỉ cấp quyền đọc thay vì quyền xóa.",
+          "Sử dụng tài khoản dịch vụ riêng biệt thay vì tài khoản quản trị hệ thống.",
+          "Thiết lập hạn mức đối với các thao tác liên quan đến tài chính."
+        ],
+        "adjustments": [
+          "Giảm mức độ rủi ro do mọi tác vụ đều yêu cầu phê duyệt thủ công."
+        ]
+      }
+    ],
+    "assessment_id": "82fe5916d3fa",
+    "created_at": "2026-11-15T08:09:43+00:00"
+  },
+  {
+    "answers": {
       "system_name": "Multi-Agent Enterprise Assistant",
       "purpose": "task_automation",
-      "purpose_details": "[Dev Mode Specification] Coordinator agent decomposes user requests and delegates to SQL/RAG and Email tool sub-agents. | Active Controls: [CTRL_SYS_PROMPT_SEP, CTRL_GUARDRAILS, CTRL_TOOL_ALLOWLIST, CTRL_STEP_BUDGET, CTRL_INTER_AGENT_VALIDATION, CTRL_CONTEXT_ISOLATION, CTRL_SCOPED_DELEGATION, CTRL_DETERMINISTIC_ROUTER, CTRL_IMMUTABLE_TRACE_LOG, CTRL_RAG_ACL, CTRL_DLP_REDACTION, CTRL_RAG_INGEST_FILTER]",
+      "purpose_details": "Coordinator agent decomposes user requests and delegates to SQL/RAG and Email tool sub-agents. | Controls: [CTRL_SYS_PROMPT_SEP, CTRL_GUARDRAILS]",
       "scenarios": [
-        "Primary topology: COORDINATOR with composite patterns [COORDINATOR, REACT, HUMAN_IN_THE_LOOP]",
-        "Human-in-the-loop governance: partial; Exposure: public; Active Controls: 12"
+        "Primary: COORDINATOR; Composite: [COORDINATOR, REACT, HUMAN_IN_THE_LOOP]",
+        "Oversight: partial; Exposure: public; Controls: 2"
       ],
       "collaboration": "manager",
       "autonomy": "partial_auto",
       "resources": [
         "internal_docs",
         "external_tools",
-        "company_data",
-        "web_search"
+        "company_data"
       ],
       "audience": "public",
       "sensitive_data": [
@@ -29,265 +268,1078 @@
         "REACT",
         "HUMAN_IN_THE_LOOP"
       ],
+      "rule_patterns": [
+        "COORDINATOR",
+        "REACT",
+        "HUMAN_IN_THE_LOOP"
+      ],
+      "llm_added_patterns": [],
+      "ai_insights": [
+        "Việc sử dụng tác nhân điều phối yêu cầu kiểm soát chặt chẽ các chỉ dẫn hệ thống để ngăn chặn việc leo thang đặc quyền giữa các tác nhân con.",
+        "Cần thiết lập cơ chế kiểm tra dữ liệu đầu vào và đầu ra để bảo vệ thông tin cá nhân và dữ liệu mật khi hệ thống tương tác với công cụ email và cơ sở dữ liệu.",
+        "Quy trình phê duyệt thủ công là điểm kiểm soát quan trọng để giảm thiểu rủi ro từ các hành động tự động hóa không mong muốn."
+      ],
       "human_oversight": "partial",
       "is_multi_agent": true,
       "confidence": 1.0,
-      "rationale": "Explicit Dev Mode architecture: primary=COORDINATOR, composite=[COORDINATOR, REACT, HUMAN_IN_THE_LOOP], oversight=partial, exposure=public, controls=[CTRL_SYS_PROMPT_SEP, CTRL_GUARDRAILS, CTRL_TOOL_ALLOWLIST, CTRL_STEP_BUDGET, CTRL_INTER_AGENT_VALIDATION, CTRL_CONTEXT_ISOLATION, CTRL_SCOPED_DELEGATION, CTRL_DETERMINISTIC_ROUTER, CTRL_IMMUTABLE_TRACE_LOG, CTRL_RAG_ACL, CTRL_DLP_REDACTION, CTRL_RAG_INGEST_FILTER]. Automatically mapped to OWASP LLM Top 10 (2025), OWASP Agentic AI Threats, and NIST AI RMF 1.0.",
-      "plain_summary": "AI điều phối trung tâm giao việc động (Multi-agent Coordinator / Router pattern).",
-      "source": "rules"
+      "rationale": "The system uses a manager agent to delegate tasks to specialized sub-agents, which utilize external tools and RAG, fitting the COORDINATOR pattern. The use of tools implies REACT, and the partial autonomy requires HUMAN_IN_THE_LOOP.",
+      "plain_summary": "Hệ thống sử dụng một tác nhân điều phối để phân chia công việc cho các tác nhân chuyên biệt, kết hợp với quy trình phê duyệt của con người trước khi thực hiện các hành động tự động.",
+      "source": "llm"
     },
-    "overall_score": 8,
-    "overall_severity": "Medium",
-    "overall_severity_label": "Trung bình",
-    "oversight_note": "Ứng dụng hỏi ý kiến bạn trước những việc quan trọng. Hãy chắc chắn rằng \"việc quan trọng\" được định nghĩa rõ ràng.",
+    "overall_score": 20,
+    "overall_severity": "Critical",
+    "overall_severity_label": "Nghiêm trọng",
+    "oversight_note": "Cơ chế kiểm soát: Hệ thống yêu cầu phê duyệt đối với các thao tác quan trọng. Cần quy định rõ danh mục tác vụ bắt buộc phê duyệt.",
     "top_actions": [
-      "Chỉ cho người có trách nhiệm thêm hoặc sửa tài liệu mà AI đọc.",
-      "Kiểm tra câu trả lời của AI trước khi hiển thị cho người dùng.",
-      "Giới hạn số bước tối đa AI được làm cho mỗi yêu cầu."
+      "Áp dụng phân quyền truy cập tài liệu theo đúng định danh của người gửi yêu cầu.",
+      "Che dấu hoặc ẩn thông tin định danh và dữ liệu thẻ trước khi chuyển cho AI xử lý.",
+      "Áp dụng kiểm tra tham số chặt chẽ và giới hạn đặc quyền tối thiểu giữa bước tra cứu và bước gọi công cụ."
     ],
     "risks": [
       {
+        "id": "DOC_ACCESS_LEAK",
+        "title": "Truy xuất tài liệu vượt thẩm quyền",
+        "explanation": "Hệ thống có thể trích xuất nội dung từ các tài liệu nội bộ như bảng lương hoặc hợp đồng mật cho người dùng không có quyền xem.",
+        "likelihood": 4,
+        "impact": 5,
+        "score": 20,
+        "severity": "Critical",
+        "severityLabel": "Nghiêm trọng",
+        "recommendations": [
+          "Áp dụng phân quyền truy cập tài liệu theo đúng định danh của người gửi yêu cầu.",
+          "Tách biệt kho tài liệu mật khỏi nguồn dữ liệu tra cứu chung."
+        ],
+        "adjustments": [
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài.",
+          "Tăng mức độ ảnh hưởng do hệ thống xử lý dữ liệu nhạy cảm."
+        ]
+      },
+      {
+        "id": "CUSTOMER_DATA_LEAK",
+        "title": "Rò rỉ hoặc ghi đè dữ liệu nghiệp vụ",
+        "explanation": "Khi kết nối trực tiếp với cơ sở dữ liệu khách hàng và vận hành, hệ thống có nguy cơ bị khai thác để trích xuất thông tin trái phép hoặc cập nhật sai dữ liệu.",
+        "likelihood": 4,
+        "impact": 5,
+        "score": 20,
+        "severity": "Critical",
+        "severityLabel": "Nghiêm trọng",
+        "recommendations": [
+          "Che dấu hoặc ẩn thông tin định danh và dữ liệu thẻ trước khi chuyển cho AI xử lý.",
+          "Ưu tiên kết nối ở chế độ chỉ đọc, kiểm soát chặt các lệnh ghi hoặc xóa.",
+          "Ghi nhận nhật ký kiểm toán đối với mọi truy vấn dữ liệu."
+        ],
+        "adjustments": [
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài.",
+          "Tăng mức độ ảnh hưởng do hệ thống xử lý dữ liệu nhạy cảm."
+        ]
+      },
+      {
+        "id": "AI-02",
+        "title": "Rủi ro chuỗi liên kết dữ liệu và công cụ liên thành phần",
+        "explanation": "Sự kết hợp giữa mô hình tác nhân điều phối trung tâm và tài nguyên tích hợp (internal_docs, external_tools, company_data) tạo ra đường dẫn liên hoàn, cho phép dữ liệu truy xuất không tin cậy kích hoạt công cụ hoặc làm lộ bản ghi nhạy cảm.",
+        "likelihood": 4,
+        "impact": 5,
+        "score": 20,
+        "severity": "Critical",
+        "severityLabel": "Nghiêm trọng",
+        "recommendations": [
+          "Áp dụng kiểm tra tham số chặt chẽ và giới hạn đặc quyền tối thiểu giữa bước tra cứu và bước gọi công cụ.",
+          "Che dấu trường dữ liệu nhạy cảm trước khi chuyển bản ghi sang công cụ hoặc tác nhân kế tiếp."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "CROSS_AGENT_CONTAMINATION",
+        "title": "Rủi ro lây nhiễm chéo liên tác nhân",
+        "explanation": "Hệ thống có nhiều AI cùng xử lý công việc. Nếu một tác nhân bị thao túng, chỉ thị độc hại có thể lan sang các tác nhân khác và làm gián đoạn quy trình.",
+        "likelihood": 4,
+        "impact": 4,
+        "score": 16,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Giới hạn quyền của từng AI theo đúng chức năng được giao.",
+          "Kiểm tra tính hợp lệ của mọi thông điệp trao đổi nội bộ giữa các tác nhân.",
+          "Thiết lập cơ chế tạm dừng nhanh tác nhân có dấu hiệu hoạt động bất thường."
+        ],
+        "adjustments": [
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài."
+        ]
+      },
+      {
+        "id": "ROUTING_BYPASS",
+        "title": "Thao túng luồng điều phối",
+        "explanation": "Tác nhân điều phối quyết định luồng đi của từng yêu cầu. Đầu vào được thiết kế tinh vi có thể khiến hệ thống bỏ qua bước kiểm duyệt và chuyển thẳng yêu cầu đến tác nhân thực thi.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Thiết lập cổng kiểm tra an toàn cố định mà tác nhân AI không thể bỏ qua.",
+          "Giới hạn điều phối trong danh sách luồng nghiệp vụ đã được định nghĩa sẵn."
+        ],
+        "adjustments": [
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài.",
+          "Áp dụng 1 kiểm soát kỹ thuật (CTRL_GUARDRAILS): giảm 35% → L = 3."
+        ]
+      },
+      {
         "id": "POISONED_DOCS",
-        "title": "Tài liệu bị cài \"bẫy\"",
-        "explanation": "AI đọc tài liệu của công ty để trả lời. Nếu ai đó chèn nội dung độc hại vào một tài liệu, AI có thể làm theo nội dung đó thay vì làm theo bạn.",
+        "title": "Chèn chỉ thị độc hại qua tài liệu tra cứu",
+        "explanation": "Hệ thống tra cứu tài liệu nội bộ để trả lời. Nếu tài liệu bị chèn nội dung điều hướng ẩn, AI có thể thực thi theo chỉ thị đó thay vì quy tắc gốc.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Kiểm soát chặt quyền thêm mới và chỉnh sửa tài liệu trong kho tri thức.",
+          "Rà soát và làm sạch nội dung tài liệu trước khi đưa vào hệ thống tra cứu."
+        ],
+        "adjustments": [
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài.",
+          "Áp dụng 1 kiểm soát kỹ thuật (CTRL_SYS_PROMPT_SEP): giảm 25% → L = 3."
+        ]
+      },
+      {
+        "id": "AI-03",
+        "title": "Rủi ro lệch hướng quyết định tự trị và lỗ hổng giám sát",
+        "explanation": "Với mức độ giám sát con người là partial trên cấu trúc đa tác nhân, sai lệch tích lũy hoặc thao tác chưa xác thực có thể làm thay đổi trạng thái hệ thống ngoài ý muốn.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Thiết lập cổng kiểm tra chính sách cố định trước mọi thao tác làm thay đổi dữ liệu hoặc trạng thái.",
+          "Lưu nhật ký bất biến cho toàn bộ các bước suy luận và chuyển giao tác vụ giữa các tác nhân."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "PRIVILEGE_ESCALATION",
+        "title": "Leo thang đặc quyền qua phân công tác vụ",
+        "explanation": "Tác nhân điều phối có thể bị điều hướng để chuyển yêu cầu sang một tác nhân khác có quyền hạn cao hơn, dẫn đến thực thi thao tác vượt thẩm quyền.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Giới hạn quyền của từng AI ở mức tối thiểu cần thiết.",
+          "Yêu cầu mỗi tác nhân tự xác thực quyền truy cập thay vì phụ thuộc hoàn toàn vào tác nhân điều phối.",
+          "Không cho phép tác nhân điều phối tự cấp thêm quyền cho tác nhân con."
+        ],
+        "adjustments": [
+          "Giảm một phần rủi ro do các tác vụ quan trọng có bước phê duyệt."
+        ]
+      },
+      {
+        "id": "TOOL_HIJACK",
+        "title": "Thực thi công cụ ngoài ý muốn",
+        "explanation": "Khi AI có quyền tự gọi công cụ hoặc thao tác dữ liệu, đầu vào độc hại có thể điều hướng hệ thống thực hiện tác vụ ngoài phạm vi cho phép.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Chỉ cấp quyền truy cập tối thiểu đối với các công cụ thực sự cần thiết.",
+          "Yêu cầu phê duyệt thủ công đối với các tác vụ quan trọng như thanh toán, xóa dữ liệu hoặc gửi thư ra ngoài.",
+          "Thiết lập hạn mức tần suất và giá trị cho từng loại thao tác."
+        ],
+        "adjustments": [
+          "Giảm một phần rủi ro do các tác vụ quan trọng có bước phê duyệt.",
+          "Tăng khả năng xảy ra do hệ thống tiếp nhận dữ liệu từ tài liệu hoặc Internet.",
+          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_GUARDRAILS, CTRL_SYS_PROMPT_SEP): giảm 60% → L = 2."
+        ]
+      },
+      {
+        "id": "EXCESSIVE_AGENCY",
+        "title": "Cấp quyền quá mức cho công cụ tích hợp",
+        "explanation": "Hệ thống được kết nối với email, lịch hoặc cổng thanh toán với quyền hạn rộng có thể gây thiệt hại thực tế nếu phát sinh lỗi xử lý.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Áp dụng nguyên tắc đặc quyền tối thiểu, ví dụ chỉ cấp quyền đọc thay vì quyền xóa.",
+          "Sử dụng tài khoản dịch vụ riêng biệt thay vì tài khoản quản trị hệ thống.",
+          "Thiết lập hạn mức đối với các thao tác liên quan đến tài chính."
+        ],
+        "adjustments": [
+          "Giảm một phần rủi ro do các tác vụ quan trọng có bước phê duyệt."
+        ]
+      },
+      {
+        "id": "AI-01",
+        "title": "Thao túng ngữ cảnh theo kịch bản vận hành",
+        "explanation": "Trong kịch bản vận hành của Multi-Agent Enterprise Assistant (Primary: COORDINATOR; Composite: [COORDINATOR, REACT, HUMAN_IN_THE_LOOP]), dữ liệu đầu vào bất thường qua nhiều lượt tương tác có thể làm lệch mục tiêu xử lý và vượt qua ràng buộc nghiệp vụ.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Tách biệt dữ liệu đầu vào trong kịch bản khỏi chỉ thị hệ thống bằng cấu trúc phân cách rõ ràng.",
+          "Kiểm tra tính hợp lệ của trạng thái nghiệp vụ tại từng bước chuyển tiếp trong quy trình."
+        ],
+        "adjustments": [
+          "Áp dụng 2 kiểm soát (CTRL_SYS_PROMPT_SEP, CTRL_GUARDRAILS): giảm 60% → L = 2."
+        ]
+      },
+      {
+        "id": "RUNAWAY_LOOP",
+        "title": "Vòng lặp thực thi không giới hạn",
+        "explanation": "Hệ thống tự lặp lại quá trình suy luận và gọi công cụ khi gặp tình huống bất thường, gây tiêu hao tài nguyên và làm chậm dịch vụ.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Giới hạn số bước thực thi tối đa và thời gian chờ cho mỗi yêu cầu.",
+          "Thiết lập hạn mức chi phí theo ngày và cảnh báo khi vượt ngưỡng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "PROMPT_INJECTION",
+        "title": "Thao túng chỉ thị đầu vào",
+        "explanation": "Người dùng có thể nhập nội dung được cấu trúc chủ đích nhằm vượt qua quy tắc kiểm soát, buộc hệ thống phản hồi trái phép hoặc tiết lộ cấu hình nội bộ.",
+        "likelihood": 2,
+        "impact": 3,
+        "score": 6,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Áp dụng bộ lọc kiểm duyệt đầu vào và đầu ra trước khi hiển thị kết quả.",
+          "Thực hiện kiểm thử với các mẫu câu vượt rào phổ biến trước khi vận hành.",
+          "Không lưu trữ mật khẩu hoặc khóa bí mật trong chỉ thị hệ thống."
+        ],
+        "adjustments": [
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài.",
+          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_SYS_PROMPT_SEP, CTRL_GUARDRAILS): giảm 60% → L = 2."
+        ]
+      },
+      {
+        "id": "MISINFORMATION",
+        "title": "Phản hồi thông tin thiếu chính xác",
+        "explanation": "Mô hình có thể tạo ra thông tin sai lệch nhưng có văn phong thuyết phục, dẫn đến sai sót nếu người dùng áp dụng trực tiếp mà không đối chiếu.",
+        "likelihood": 2,
+        "impact": 3,
+        "score": 6,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Gắn nhãn rõ ràng đối với các nội dung do hệ thống AI tự động tạo ra.",
+          "Yêu cầu trích dẫn nguồn dữ liệu gốc đối với các thông tin quan trọng."
+        ],
+        "adjustments": [
+          "Áp dụng 1 kiểm soát kỹ thuật (CTRL_GUARDRAILS): giảm 35% → L = 2."
+        ]
+      },
+      {
+        "id": "APPROVAL_FATIGUE",
+        "title": "Giảm hiệu quả phê duyệt thủ công",
+        "explanation": "Cơ chế chờ người phê duyệt giúp giảm rủi ro tự động hóa, nhưng nếu số lượng yêu cầu quá lớn, người duyệt dễ xác nhận theo quán tính mà không kiểm tra kỹ.",
+        "likelihood": 3,
+        "impact": 2,
+        "score": 6,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Chỉ yêu cầu phê duyệt thủ công đối với các tác vụ có mức độ ảnh hưởng cao.",
+          "Hiển thị tóm tắt rõ nội dung thao tác, đối tượng nhận và phạm vi tác động trên màn hình duyệt."
+        ],
+        "adjustments": []
+      }
+    ],
+    "assessment_id": "3b0c3ced1f38",
+    "created_at": "2026-11-15T07:59:30+00:00"
+  },
+  {
+    "answers": {
+      "system_name": null,
+      "purpose": "task_automation",
+      "purpose_details": null,
+      "scenarios": [],
+      "collaboration": "manager",
+      "autonomy": "answer_only",
+      "resources": [
+        "web_search"
+      ],
+      "audience": "internal",
+      "sensitive_data": [
+        "financial"
+      ]
+    },
+    "detection": {
+      "primary_pattern": "COORDINATOR",
+      "patterns": [
+        "REACT",
+        "COORDINATOR"
+      ],
+      "rule_patterns": [
+        "REACT",
+        "COORDINATOR"
+      ],
+      "llm_added_patterns": [],
+      "ai_insights": [
+        "Việc sử dụng tác nhân điều phối truy cập dữ liệu tài chính nhạy cảm đòi hỏi kiểm soát chặt chẽ quyền truy cập của từng tác nhân con.",
+        "Khả năng tìm kiếm web của hệ thống có thể dẫn đến rủi ro rò rỉ thông tin nội bộ nếu không được cấu hình bộ lọc dữ liệu đầu ra cẩn thận."
+      ],
+      "human_oversight": "none",
+      "is_multi_agent": true,
+      "confidence": 0.8,
+      "rationale": "The system uses a manager pattern to delegate tasks to sub-agents and utilizes web search tools, which implies a REACT loop for the sub-agents.",
+      "plain_summary": "Hệ thống sử dụng một tác nhân điều phối để phân chia công việc cho các tác nhân chuyên biệt, kết hợp với khả năng tìm kiếm thông tin trên web để tự động hóa các tác vụ tài chính.",
+      "source": "llm"
+    },
+    "overall_score": 20,
+    "overall_severity": "Critical",
+    "overall_severity_label": "Nghiêm trọng",
+    "oversight_note": "Cơ chế kiểm soát: Hệ thống thực thi tự động không qua phê duyệt thủ công. Nên bổ sung bước xác nhận đối với các thao tác nhạy cảm.",
+    "top_actions": [
+      "Áp dụng kiểm tra tham số chặt chẽ và giới hạn đặc quyền tối thiểu giữa bước tra cứu và bước gọi công cụ.",
+      "Thiết lập cổng kiểm tra chính sách cố định trước mọi thao tác làm thay đổi dữ liệu hoặc trạng thái.",
+      "Chỉ cấp quyền truy cập tối thiểu đối với các công cụ thực sự cần thiết."
+    ],
+    "risks": [
+      {
+        "id": "AI-02",
+        "title": "Rủi ro chuỗi liên kết dữ liệu và công cụ liên thành phần",
+        "explanation": "Sự kết hợp giữa mô hình tác nhân điều phối trung tâm và tài nguyên tích hợp (web_search) tạo ra đường dẫn liên hoàn, cho phép dữ liệu truy xuất không tin cậy kích hoạt công cụ hoặc làm lộ bản ghi nhạy cảm.",
+        "likelihood": 4,
+        "impact": 5,
+        "score": 20,
+        "severity": "Critical",
+        "severityLabel": "Nghiêm trọng",
+        "recommendations": [
+          "Áp dụng kiểm tra tham số chặt chẽ và giới hạn đặc quyền tối thiểu giữa bước tra cứu và bước gọi công cụ.",
+          "Che dấu trường dữ liệu nhạy cảm trước khi chuyển bản ghi sang công cụ hoặc tác nhân kế tiếp."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "AI-03",
+        "title": "Rủi ro lệch hướng quyết định tự trị và lỗ hổng giám sát",
+        "explanation": "Với mức độ giám sát con người là none trên cấu trúc đa tác nhân, sai lệch tích lũy hoặc thao tác chưa xác thực có thể làm thay đổi trạng thái hệ thống ngoài ý muốn.",
+        "likelihood": 4,
+        "impact": 4,
+        "score": 16,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Thiết lập cổng kiểm tra chính sách cố định trước mọi thao tác làm thay đổi dữ liệu hoặc trạng thái.",
+          "Lưu nhật ký bất biến cho toàn bộ các bước suy luận và chuyển giao tác vụ giữa các tác nhân."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "TOOL_HIJACK",
+        "title": "Thực thi công cụ ngoài ý muốn",
+        "explanation": "Khi AI có quyền tự gọi công cụ hoặc thao tác dữ liệu, đầu vào độc hại có thể điều hướng hệ thống thực hiện tác vụ ngoài phạm vi cho phép.",
+        "likelihood": 3,
+        "impact": 5,
+        "score": 15,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Chỉ cấp quyền truy cập tối thiểu đối với các công cụ thực sự cần thiết.",
+          "Yêu cầu phê duyệt thủ công đối với các tác vụ quan trọng như thanh toán, xóa dữ liệu hoặc gửi thư ra ngoài.",
+          "Thiết lập hạn mức tần suất và giá trị cho từng loại thao tác."
+        ],
+        "adjustments": [
+          "Giảm mức độ rủi ro do hệ thống chỉ phản hồi thông tin, không tự thực thi tác vụ.",
+          "Tăng mức độ ảnh hưởng do liên quan đến dữ liệu tài chính.",
+          "Tăng khả năng xảy ra do hệ thống tiếp nhận dữ liệu từ tài liệu hoặc Internet."
+        ]
+      },
+      {
+        "id": "AI-01",
+        "title": "Thao túng ngữ cảnh theo kịch bản vận hành",
+        "explanation": "Trong kịch bản vận hành của Hệ thống mục tiêu (luồng nghiệp vụ chính), dữ liệu đầu vào bất thường qua nhiều lượt tương tác có thể làm lệch mục tiêu xử lý và vượt qua ràng buộc nghiệp vụ.",
+        "likelihood": 3,
+        "impact": 5,
+        "score": 15,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Tách biệt dữ liệu đầu vào trong kịch bản khỏi chỉ thị hệ thống bằng cấu trúc phân cách rõ ràng.",
+          "Kiểm tra tính hợp lệ của trạng thái nghiệp vụ tại từng bước chuyển tiếp trong quy trình."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "ROUTING_BYPASS",
+        "title": "Thao túng luồng điều phối",
+        "explanation": "Tác nhân điều phối quyết định luồng đi của từng yêu cầu. Đầu vào được thiết kế tinh vi có thể khiến hệ thống bỏ qua bước kiểm duyệt và chuyển thẳng yêu cầu đến tác nhân thực thi.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Thiết lập cổng kiểm tra an toàn cố định mà tác nhân AI không thể bỏ qua.",
+          "Giới hạn điều phối trong danh sách luồng nghiệp vụ đã được định nghĩa sẵn."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "CROSS_AGENT_CONTAMINATION",
+        "title": "Rủi ro lây nhiễm chéo liên tác nhân",
+        "explanation": "Hệ thống có nhiều AI cùng xử lý công việc. Nếu một tác nhân bị thao túng, chỉ thị độc hại có thể lan sang các tác nhân khác và làm gián đoạn quy trình.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Giới hạn quyền của từng AI theo đúng chức năng được giao.",
+          "Kiểm tra tính hợp lệ của mọi thông điệp trao đổi nội bộ giữa các tác nhân.",
+          "Thiết lập cơ chế tạm dừng nhanh tác nhân có dấu hiệu hoạt động bất thường."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "PROMPT_INJECTION",
+        "title": "Thao túng chỉ thị đầu vào",
+        "explanation": "Người dùng có thể nhập nội dung được cấu trúc chủ đích nhằm vượt qua quy tắc kiểm soát, buộc hệ thống phản hồi trái phép hoặc tiết lộ cấu hình nội bộ.",
+        "likelihood": 4,
+        "impact": 3,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Áp dụng bộ lọc kiểm duyệt đầu vào và đầu ra trước khi hiển thị kết quả.",
+          "Thực hiện kiểm thử với các mẫu câu vượt rào phổ biến trước khi vận hành.",
+          "Không lưu trữ mật khẩu hoặc khóa bí mật trong chỉ thị hệ thống."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "MALICIOUS_WEB",
+        "title": "Tiếp nhận nội dung độc hại từ Internet",
+        "explanation": "Khi truy xuất dữ liệu từ trang web bên ngoài, hệ thống có thể đọc phải các đoạn văn bản ẩn được thiết kế để điều khiển hành vi của AI.",
+        "likelihood": 4,
+        "impact": 3,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Xử lý dữ liệu từ Internet như nguồn không tin cậy, không tự động thực thi tác vụ chỉ dựa trên thông tin này.",
+          "Giới hạn phạm vi truy vấn trong danh sách các tên miền đáng tin cậy."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "RUNAWAY_LOOP",
+        "title": "Vòng lặp thực thi không giới hạn",
+        "explanation": "Hệ thống tự lặp lại quá trình suy luận và gọi công cụ khi gặp tình huống bất thường, gây tiêu hao tài nguyên và làm chậm dịch vụ.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Giới hạn số bước thực thi tối đa và thời gian chờ cho mỗi yêu cầu.",
+          "Thiết lập hạn mức chi phí theo ngày và cảnh báo khi vượt ngưỡng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "MISINFORMATION",
+        "title": "Phản hồi thông tin thiếu chính xác",
+        "explanation": "Mô hình có thể tạo ra thông tin sai lệch nhưng có văn phong thuyết phục, dẫn đến sai sót nếu người dùng áp dụng trực tiếp mà không đối chiếu.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Gắn nhãn rõ ràng đối với các nội dung do hệ thống AI tự động tạo ra.",
+          "Yêu cầu trích dẫn nguồn dữ liệu gốc đối với các thông tin quan trọng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "PRIVILEGE_ESCALATION",
+        "title": "Leo thang đặc quyền qua phân công tác vụ",
+        "explanation": "Tác nhân điều phối có thể bị điều hướng để chuyển yêu cầu sang một tác nhân khác có quyền hạn cao hơn, dẫn đến thực thi thao tác vượt thẩm quyền.",
+        "likelihood": 1,
+        "impact": 5,
+        "score": 5,
+        "severity": "Low",
+        "severityLabel": "Thấp",
+        "recommendations": [
+          "Giới hạn quyền của từng AI ở mức tối thiểu cần thiết.",
+          "Yêu cầu mỗi tác nhân tự xác thực quyền truy cập thay vì phụ thuộc hoàn toàn vào tác nhân điều phối.",
+          "Không cho phép tác nhân điều phối tự cấp thêm quyền cho tác nhân con."
+        ],
+        "adjustments": [
+          "Giảm mức độ rủi ro do hệ thống chỉ phản hồi thông tin, không tự thực thi tác vụ.",
+          "Tăng mức độ ảnh hưởng do liên quan đến dữ liệu tài chính."
+        ]
+      }
+    ],
+    "assessment_id": "ded0e8a5a3f8",
+    "created_at": "2026-11-15T07:55:02+00:00"
+  },
+  {
+    "answers": {
+      "system_name": null,
+      "purpose": "other",
+      "purpose_details": null,
+      "scenarios": [],
+      "collaboration": "parallel",
+      "autonomy": "approval_required",
+      "resources": [
+        "company_data"
+      ],
+      "audience": "internal",
+      "sensitive_data": [
+        "financial"
+      ]
+    },
+    "detection": {
+      "primary_pattern": "PARALLEL",
+      "patterns": [
+        "REACT",
+        "PARALLEL",
+        "HUMAN_IN_THE_LOOP"
+      ],
+      "rule_patterns": [
+        "REACT",
+        "PARALLEL",
+        "HUMAN_IN_THE_LOOP"
+      ],
+      "llm_added_patterns": [],
+      "ai_insights": [
+        "Cấu trúc đa tác nhân (PARALLEL) yêu cầu xác thực schema thông điệp nội bộ và cấp quyền phạm vi hẹp cho từng tác nhân con."
+      ],
+      "human_oversight": "full",
+      "is_multi_agent": true,
+      "confidence": 0.85,
+      "rationale": "Mapped collaboration=parallel and autonomy=approval_required (tools=True) to primary pattern PARALLEL with human_oversight=full.",
+      "plain_summary": "Hệ thống gồm nhiều tác nhân AI xử lý song song và tổng hợp kết quả, luôn yêu cầu người dùng phê duyệt trước khi thực thi.",
+      "source": "rules"
+    },
+    "overall_score": 15,
+    "overall_severity": "High",
+    "overall_severity_label": "Cao",
+    "oversight_note": "Cơ chế kiểm soát: Hệ thống yêu cầu phê duyệt trước mọi thao tác thực thi, giúp giảm đáng kể rủi ro tự động hóa.",
+    "top_actions": [
+      "Cô lập vùng nhớ ngữ cảnh cho từng tác vụ và từng phiên người dùng.",
+      "Che dấu hoặc ẩn thông tin định danh và dữ liệu thẻ trước khi chuyển cho AI xử lý.",
+      "Tách biệt dữ liệu đầu vào trong kịch bản khỏi chỉ thị hệ thống bằng cấu trúc phân cách rõ ràng."
+    ],
+    "risks": [
+      {
+        "id": "CROSS_TASK_LEAK",
+        "title": "Rò rỉ ngữ cảnh giữa các nhánh song song",
+        "explanation": "Nhiều tác nhân xử lý đồng thời trên cùng vùng nhớ có thể làm lộ dữ liệu của tác vụ hoặc người dùng này sang kết quả của tác vụ khác.",
+        "likelihood": 3,
+        "impact": 5,
+        "score": 15,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Cô lập vùng nhớ ngữ cảnh cho từng tác vụ và từng phiên người dùng.",
+          "Rà soát và loại bỏ thông tin nhạy cảm tại bước tổng hợp kết quả."
+        ],
+        "adjustments": [
+          "Tăng mức độ ảnh hưởng do hệ thống xử lý dữ liệu nhạy cảm."
+        ]
+      },
+      {
+        "id": "CUSTOMER_DATA_LEAK",
+        "title": "Rò rỉ hoặc ghi đè dữ liệu nghiệp vụ",
+        "explanation": "Khi kết nối trực tiếp với cơ sở dữ liệu khách hàng và vận hành, hệ thống có nguy cơ bị khai thác để trích xuất thông tin trái phép hoặc cập nhật sai dữ liệu.",
+        "likelihood": 3,
+        "impact": 5,
+        "score": 15,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Che dấu hoặc ẩn thông tin định danh và dữ liệu thẻ trước khi chuyển cho AI xử lý.",
+          "Ưu tiên kết nối ở chế độ chỉ đọc, kiểm soát chặt các lệnh ghi hoặc xóa.",
+          "Ghi nhận nhật ký kiểm toán đối với mọi truy vấn dữ liệu."
+        ],
+        "adjustments": [
+          "Tăng mức độ ảnh hưởng do hệ thống xử lý dữ liệu nhạy cảm."
+        ]
+      },
+      {
+        "id": "AI-01",
+        "title": "Thao túng ngữ cảnh theo kịch bản vận hành",
+        "explanation": "Trong kịch bản vận hành của Hệ thống mục tiêu (luồng nghiệp vụ chính), dữ liệu đầu vào bất thường qua nhiều lượt tương tác có thể làm lệch mục tiêu xử lý và vượt qua ràng buộc nghiệp vụ.",
+        "likelihood": 3,
+        "impact": 5,
+        "score": 15,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Tách biệt dữ liệu đầu vào trong kịch bản khỏi chỉ thị hệ thống bằng cấu trúc phân cách rõ ràng.",
+          "Kiểm tra tính hợp lệ của trạng thái nghiệp vụ tại từng bước chuyển tiếp trong quy trình."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "AI-02",
+        "title": "Rủi ro chuỗi liên kết dữ liệu và công cụ liên thành phần",
+        "explanation": "Sự kết hợp giữa mô hình đa tác nhân xử lý song song và tài nguyên tích hợp (company_data) tạo ra đường dẫn liên hoàn, cho phép dữ liệu truy xuất không tin cậy kích hoạt công cụ hoặc làm lộ bản ghi nhạy cảm.",
+        "likelihood": 3,
+        "impact": 5,
+        "score": 15,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Áp dụng kiểm tra tham số chặt chẽ và giới hạn đặc quyền tối thiểu giữa bước tra cứu và bước gọi công cụ.",
+          "Che dấu trường dữ liệu nhạy cảm trước khi chuyển bản ghi sang công cụ hoặc tác nhân kế tiếp."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "PROMPT_INJECTION",
+        "title": "Thao túng chỉ thị đầu vào",
+        "explanation": "Người dùng có thể nhập nội dung được cấu trúc chủ đích nhằm vượt qua quy tắc kiểm soát, buộc hệ thống phản hồi trái phép hoặc tiết lộ cấu hình nội bộ.",
+        "likelihood": 4,
+        "impact": 3,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Áp dụng bộ lọc kiểm duyệt đầu vào và đầu ra trước khi hiển thị kết quả.",
+          "Thực hiện kiểm thử với các mẫu câu vượt rào phổ biến trước khi vận hành.",
+          "Không lưu trữ mật khẩu hoặc khóa bí mật trong chỉ thị hệ thống."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "TOOL_HIJACK",
+        "title": "Thực thi công cụ ngoài ý muốn",
+        "explanation": "Khi AI có quyền tự gọi công cụ hoặc thao tác dữ liệu, đầu vào độc hại có thể điều hướng hệ thống thực hiện tác vụ ngoài phạm vi cho phép.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Chỉ cấp quyền truy cập tối thiểu đối với các công cụ thực sự cần thiết.",
+          "Yêu cầu phê duyệt thủ công đối với các tác vụ quan trọng như thanh toán, xóa dữ liệu hoặc gửi thư ra ngoài.",
+          "Thiết lập hạn mức tần suất và giá trị cho từng loại thao tác."
+        ],
+        "adjustments": [
+          "Giảm mức độ rủi ro do mọi tác vụ đều yêu cầu phê duyệt thủ công.",
+          "Tăng mức độ ảnh hưởng do liên quan đến dữ liệu tài chính."
+        ]
+      },
+      {
+        "id": "RUNAWAY_LOOP",
+        "title": "Vòng lặp thực thi không giới hạn",
+        "explanation": "Hệ thống tự lặp lại quá trình suy luận và gọi công cụ khi gặp tình huống bất thường, gây tiêu hao tài nguyên và làm chậm dịch vụ.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Giới hạn số bước thực thi tối đa và thời gian chờ cho mỗi yêu cầu.",
+          "Thiết lập hạn mức chi phí theo ngày và cảnh báo khi vượt ngưỡng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "MISINFORMATION",
+        "title": "Phản hồi thông tin thiếu chính xác",
+        "explanation": "Mô hình có thể tạo ra thông tin sai lệch nhưng có văn phong thuyết phục, dẫn đến sai sót nếu người dùng áp dụng trực tiếp mà không đối chiếu.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Gắn nhãn rõ ràng đối với các nội dung do hệ thống AI tự động tạo ra.",
+          "Yêu cầu trích dẫn nguồn dữ liệu gốc đối với các thông tin quan trọng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "AI-03",
+        "title": "Rủi ro lệch hướng quyết định tự trị và lỗ hổng giám sát",
+        "explanation": "Với mức độ giám sát con người là full trên cấu trúc đa tác nhân, sai lệch tích lũy hoặc thao tác chưa xác thực có thể làm thay đổi trạng thái hệ thống ngoài ý muốn.",
         "likelihood": 2,
         "impact": 4,
         "score": 8,
         "severity": "Medium",
         "severityLabel": "Trung bình",
         "recommendations": [
-          "Chỉ cho người có trách nhiệm thêm hoặc sửa tài liệu mà AI đọc.",
-          "Rà soát tài liệu mới trước khi đưa vào cho AI sử dụng."
+          "Thiết lập cổng kiểm tra chính sách cố định trước mọi thao tác làm thay đổi dữ liệu hoặc trạng thái.",
+          "Lưu nhật ký bất biến cho toàn bộ các bước suy luận và chuyển giao tác vụ giữa các tác nhân."
         ],
-        "adjustments": [
-          "Tăng mức độ vì ai cũng có thể dùng ứng dụng này.",
-          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_RAG_INGEST_FILTER, CTRL_SYS_PROMPT_SEP): W_total = 60% → L_final = 2."
-        ]
+        "adjustments": []
       },
       {
-        "id": "PROMPT_INJECTION",
-        "title": "Bị lừa bằng lời nói",
-        "explanation": "Người dùng có thể viết những câu \"lừa\" khéo léo để AI quên các quy tắc bạn đặt ra, ví dụ nói những điều bị cấm hoặc tiết lộ hướng dẫn nội bộ.",
-        "likelihood": 2,
-        "impact": 3,
+        "id": "MERGE_CORRUPTION",
+        "title": "Sai lệch kết quả khi tổng hợp",
+        "explanation": "Khi hợp nhất đầu ra từ nhiều nhánh xử lý song song, dữ liệu sai từ một nhánh có thể làm lệch toàn bộ kết quả cuối cùng.",
+        "likelihood": 3,
+        "impact": 2,
         "score": 6,
         "severity": "Medium",
         "severityLabel": "Trung bình",
         "recommendations": [
-          "Kiểm tra câu trả lời của AI trước khi hiển thị cho người dùng.",
-          "Thử \"tấn công\" ứng dụng bằng các câu lừa phổ biến trước khi ra mắt.",
-          "Không đưa mật khẩu hay thông tin bí mật vào phần hướng dẫn của AI."
+          "Đối chiếu chéo kết quả giữa các nhánh và cảnh báo khi phát hiện mâu thuẫn."
         ],
-        "adjustments": [
-          "Tăng mức độ vì ai cũng có thể dùng ứng dụng này.",
-          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_SYS_PROMPT_SEP, CTRL_GUARDRAILS): W_total = 60% → L_final = 2."
-        ]
+        "adjustments": []
       },
       {
-        "id": "RUNAWAY_LOOP",
-        "title": "Chạy vòng vòng không dừng",
-        "explanation": "AI tự thử, xem kết quả rồi thử lại. Gặp tình huống lạ, nó có thể lặp mãi, làm tốn chi phí và khiến hệ thống chậm hoặc ngừng hoạt động.",
-        "likelihood": 2,
-        "impact": 3,
+        "id": "APPROVAL_FATIGUE",
+        "title": "Giảm hiệu quả phê duyệt thủ công",
+        "explanation": "Cơ chế chờ người phê duyệt giúp giảm rủi ro tự động hóa, nhưng nếu số lượng yêu cầu quá lớn, người duyệt dễ xác nhận theo quán tính mà không kiểm tra kỹ.",
+        "likelihood": 3,
+        "impact": 2,
         "score": 6,
         "severity": "Medium",
         "severityLabel": "Trung bình",
         "recommendations": [
-          "Giới hạn số bước tối đa AI được làm cho mỗi yêu cầu.",
-          "Đặt ngân sách chi phí hằng ngày và cảnh báo khi vượt."
+          "Chỉ yêu cầu phê duyệt thủ công đối với các tác vụ có mức độ ảnh hưởng cao.",
+          "Hiển thị tóm tắt rõ nội dung thao tác, đối tượng nhận và phạm vi tác động trên màn hình duyệt."
         ],
-        "adjustments": [
-          "Áp dụng 1 kiểm soát kỹ thuật (CTRL_STEP_BUDGET): W_total = 40% → L_final = 2."
-        ]
-      },
-      {
-        "id": "MALICIOUS_WEB",
-        "title": "Trang web độc hại điều khiển AI",
-        "explanation": "Khi AI đọc nội dung trên Internet, kẻ xấu có thể giấu những dòng chữ \"ra lệnh\" cho AI ngay trong trang web đó.",
-        "likelihood": 2,
-        "impact": 3,
-        "score": 6,
-        "severity": "Medium",
-        "severityLabel": "Trung bình",
-        "recommendations": [
-          "Coi nội dung từ Internet là chưa đáng tin, không cho AI hành động chỉ dựa trên đó.",
-          "Giới hạn danh sách trang web AI được phép đọc nếu có thể."
-        ],
-        "adjustments": [
-          "Tăng mức độ vì ai cũng có thể dùng ứng dụng này.",
-          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_SYS_PROMPT_SEP, CTRL_GUARDRAILS): W_total = 60% → L_final = 2."
-        ]
-      },
-      {
-        "id": "MISINFORMATION",
-        "title": "Trả lời sai nhưng nghe rất thuyết phục",
-        "explanation": "AI đôi khi \"bịa\" thông tin nhưng nói rất tự tin. Người dùng có thể tin và làm theo mà không kiểm tra lại.",
-        "likelihood": 2,
-        "impact": 3,
-        "score": 6,
-        "severity": "Medium",
-        "severityLabel": "Trung bình",
-        "recommendations": [
-          "Ghi rõ cho người dùng biết đây là câu trả lời do AI tạo ra.",
-          "Yêu cầu AI dẫn nguồn và kiểm tra lại với các thông tin quan trọng."
-        ],
-        "adjustments": [
-          "Áp dụng 1 kiểm soát kỹ thuật (CTRL_GUARDRAILS): W_total = 35% → L_final = 2."
-        ]
-      },
-      {
-        "id": "PRIVILEGE_ESCALATION",
-        "title": "AI vượt quyền",
-        "explanation": "Có AI được giao nhiệm vụ chuyển việc cho AI khác. Kẻ xấu có thể lừa nó chuyển yêu cầu sang một AI có nhiều quyền hơn, nhờ đó làm được những việc lẽ ra bị cấm.",
-        "likelihood": 1,
-        "impact": 5,
-        "score": 5,
-        "severity": "Low",
-        "severityLabel": "Thấp",
-        "recommendations": [
-          "Nên giới hạn quyền của từng AI ở mức tối thiểu cần thiết.",
-          "Mỗi AI phải tự kiểm tra quyền, không chỉ tin vào AI giao việc.",
-          "Không cho AI giao việc tự cấp thêm quyền cho AI khác."
-        ],
-        "adjustments": [
-          "Đã giảm một phần vì việc quan trọng vẫn được hỏi ý kiến trước.",
-          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_SCOPED_DELEGATION, CTRL_TOOL_ALLOWLIST): W_total = 75% → L_final = 1."
-        ]
-      },
-      {
-        "id": "TOOL_HIJACK",
-        "title": "Bị lừa để tự ý dùng công cụ",
-        "explanation": "AI của bạn tự quyết định khi nào gửi email, tra cứu hay thao tác dữ liệu. Nếu kẻ xấu lừa được nó bằng một câu lệnh khéo léo, AI có thể làm những việc bạn không hề cho phép.",
-        "likelihood": 1,
-        "impact": 5,
-        "score": 5,
-        "severity": "Low",
-        "severityLabel": "Thấp",
-        "recommendations": [
-          "Chỉ cấp cho AI những công cụ thật sự cần thiết.",
-          "Bắt buộc có người duyệt trước các hành động quan trọng như chuyển tiền, xoá dữ liệu, gửi email ra ngoài.",
-          "Đặt hạn mức cho từng hành động (số tiền, số email mỗi ngày)."
-        ],
-        "adjustments": [
-          "Đã giảm một phần vì việc quan trọng vẫn được hỏi ý kiến trước.",
-          "Tăng mức độ vì AI đọc nội dung từ tài liệu hoặc Internet, nơi có thể bị cài nội dung xấu.",
-          "Áp dụng 3 kiểm soát kỹ thuật (CTRL_TOOL_ALLOWLIST, CTRL_GUARDRAILS, CTRL_SYS_PROMPT_SEP): W_total = 80% → L_final = 1."
-        ]
-      },
-      {
-        "id": "DOC_ACCESS_LEAK",
-        "title": "Lộ tài liệu cho người không có quyền",
-        "explanation": "AI có thể trả lời bằng nội dung lấy từ tài liệu mà người hỏi lẽ ra không được xem, ví dụ bảng lương hay hợp đồng.",
-        "likelihood": 1,
-        "impact": 5,
-        "score": 5,
-        "severity": "Low",
-        "severityLabel": "Thấp",
-        "recommendations": [
-          "AI chỉ được tra cứu những tài liệu mà chính người hỏi có quyền xem.",
-          "Tách riêng tài liệu mật khỏi kho tài liệu AI sử dụng."
-        ],
-        "adjustments": [
-          "Tăng mức độ vì ai cũng có thể dùng ứng dụng này.",
-          "Tăng mức độ vì ứng dụng xử lý dữ liệu nhạy cảm.",
-          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_RAG_ACL, CTRL_DLP_REDACTION): W_total = 80% → L_final = 1."
-        ]
-      },
-      {
-        "id": "EXCESSIVE_AGENCY",
-        "title": "AI có quá nhiều quyền",
-        "explanation": "AI được kết nối với email, lịch, thanh toán... Nếu nó có nhiều quyền hơn mức cần, chỉ một sai sót nhỏ cũng có thể gây thiệt hại thật.",
-        "likelihood": 1,
-        "impact": 5,
-        "score": 5,
-        "severity": "Low",
-        "severityLabel": "Thấp",
-        "recommendations": [
-          "Chỉ cấp quyền tối thiểu (ví dụ: chỉ được xem lịch, không được xoá).",
-          "Dùng tài khoản riêng cho AI, không dùng tài khoản quản trị.",
-          "Đặt hạn mức cho các thao tác liên quan đến tiền."
-        ],
-        "adjustments": [
-          "Đã giảm một phần vì việc quan trọng vẫn được hỏi ý kiến trước.",
-          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_TOOL_ALLOWLIST, CTRL_SCOPED_DELEGATION): W_total = 75% → L_final = 1."
-        ]
-      },
+        "adjustments": []
+      }
+    ],
+    "assessment_id": "5918d4e677f8",
+    "created_at": "2026-11-15T07:50:19+00:00"
+  },
+  {
+    "answers": {
+      "system_name": "Multi-Agent Enterprise Assistant",
+      "purpose": "task_automation",
+      "purpose_details": "Coordinator agent decomposes user requests and delegates to SQL/RAG and Email tool sub-agents. | Controls: [CTRL_SYS_PROMPT_SEP, CTRL_GUARDRAILS, CTRL_RAG_ACL]",
+      "scenarios": [
+        "Primary: HIERARCHICAL; Composite: [HIERARCHICAL, REACT, HUMAN_IN_THE_LOOP]",
+        "Oversight: partial; Exposure: public; Controls: 3"
+      ],
+      "collaboration": "manager",
+      "autonomy": "partial_auto",
+      "resources": [
+        "internal_docs",
+        "external_tools",
+        "company_data"
+      ],
+      "audience": "public",
+      "sensitive_data": [
+        "personal",
+        "confidential"
+      ]
+    },
+    "detection": {
+      "primary_pattern": "HIERARCHICAL",
+      "patterns": [
+        "HIERARCHICAL",
+        "REACT",
+        "HUMAN_IN_THE_LOOP",
+        "COORDINATOR"
+      ],
+      "rule_patterns": [
+        "HIERARCHICAL",
+        "REACT",
+        "HUMAN_IN_THE_LOOP"
+      ],
+      "llm_added_patterns": [
+        "COORDINATOR"
+      ],
+      "ai_insights": [
+        "Việc sử dụng tác nhân điều phối truy cập dữ liệu nhạy cảm và công cụ bên ngoài đòi hỏi kiểm soát chặt chẽ quyền truy cập của từng tác nhân con.",
+        "Cơ chế phê duyệt một phần cần được thiết kế để ngăn chặn các hành động tự động không mong muốn đối với dữ liệu cá nhân và thông tin mật.",
+        "Cần giám sát chặt chẽ các tương tác của tác nhân với công cụ bên ngoài để tránh rò rỉ dữ liệu hoặc thực thi lệnh trái phép."
+      ],
+      "human_oversight": "partial",
+      "is_multi_agent": true,
+      "confidence": 1.0,
+      "rationale": "The system uses a manager agent to delegate tasks to specialized sub-agents, which utilize external tools and RAG, necessitating a REACT pattern for tool execution and HUMAN_IN_THE_LOOP for partial oversight.",
+      "plain_summary": "Hệ thống sử dụng một tác nhân điều phối để phân chia công việc cho các tác nhân chuyên biệt, kết hợp với công cụ bên ngoài và yêu cầu sự phê duyệt của con người trong một số quy trình.",
+      "source": "llm"
+    },
+    "overall_score": 20,
+    "overall_severity": "Critical",
+    "overall_severity_label": "Nghiêm trọng",
+    "oversight_note": "Cơ chế kiểm soát: Hệ thống yêu cầu phê duyệt đối với các thao tác quan trọng. Cần quy định rõ danh mục tác vụ bắt buộc phê duyệt.",
+    "top_actions": [
+      "Che dấu hoặc ẩn thông tin định danh và dữ liệu thẻ trước khi chuyển cho AI xử lý.",
+      "Giới hạn quyền của từng AI theo đúng chức năng được giao.",
+      "Thiết lập cổng kiểm tra an toàn cố định mà tác nhân AI không thể bỏ qua."
+    ],
+    "risks": [
       {
         "id": "CUSTOMER_DATA_LEAK",
-        "title": "Lộ hoặc sửa sai dữ liệu khách hàng",
-        "explanation": "AI đọc hoặc ghi dữ liệu khách hàng và hệ thống công ty. Kẻ xấu có thể dụ AI tiết lộ thông tin của người khác hoặc sửa dữ liệu sai.",
-        "likelihood": 1,
+        "title": "Rò rỉ hoặc ghi đè dữ liệu nghiệp vụ",
+        "explanation": "Khi kết nối trực tiếp với cơ sở dữ liệu khách hàng và vận hành, hệ thống có nguy cơ bị khai thác để trích xuất thông tin trái phép hoặc cập nhật sai dữ liệu.",
+        "likelihood": 4,
         "impact": 5,
-        "score": 5,
-        "severity": "Low",
-        "severityLabel": "Thấp",
+        "score": 20,
+        "severity": "Critical",
+        "severityLabel": "Nghiêm trọng",
         "recommendations": [
-          "Che bớt thông tin nhạy cảm (số điện thoại, số thẻ) trước khi đưa cho AI.",
-          "Ưu tiên cho AI chỉ được đọc, hạn chế quyền ghi hoặc xoá.",
-          "Ghi lại nhật ký mỗi lần AI truy cập dữ liệu."
+          "Che dấu hoặc ẩn thông tin định danh và dữ liệu thẻ trước khi chuyển cho AI xử lý.",
+          "Ưu tiên kết nối ở chế độ chỉ đọc, kiểm soát chặt các lệnh ghi hoặc xóa.",
+          "Ghi nhận nhật ký kiểm toán đối với mọi truy vấn dữ liệu."
         ],
         "adjustments": [
-          "Tăng mức độ vì ai cũng có thể dùng ứng dụng này.",
-          "Tăng mức độ vì ứng dụng xử lý dữ liệu nhạy cảm.",
-          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_DLP_REDACTION, CTRL_IMMUTABLE_TRACE_LOG): W_total = 75% → L_final = 1."
-        ]
-      },
-      {
-        "id": "ROUTING_BYPASS",
-        "title": "Lách qua khâu kiểm duyệt",
-        "explanation": "AI \"trưởng nhóm\" quyết định mỗi yêu cầu sẽ đi đâu. Một câu lệnh khéo léo có thể khiến nó bỏ qua bước kiểm tra an toàn và chuyển thẳng yêu cầu tới nơi không nên tới.",
-        "likelihood": 1,
-        "impact": 4,
-        "score": 4,
-        "severity": "Low",
-        "severityLabel": "Thấp",
-        "recommendations": [
-          "Đặt bước kiểm tra an toàn cố định mà AI không thể bỏ qua.",
-          "Chỉ cho AI giao việc chọn trong danh sách đường đi đã được duyệt sẵn."
-        ],
-        "adjustments": [
-          "Tăng mức độ vì ai cũng có thể dùng ứng dụng này.",
-          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_DETERMINISTIC_ROUTER, CTRL_GUARDRAILS): W_total = 70% → L_final = 1."
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài.",
+          "Tăng mức độ ảnh hưởng do hệ thống xử lý dữ liệu nhạy cảm."
         ]
       },
       {
         "id": "CROSS_AGENT_CONTAMINATION",
-        "title": "Rủi ro lây nhiễm chéo",
-        "explanation": "Ứng dụng của bạn có nhiều AI chia sẻ công việc. Nếu kẻ xấu lừa được một AI, lỗi này có thể lan sang các AI khác và làm hỏng toàn bộ quy trình.",
-        "likelihood": 1,
+        "title": "Rủi ro lây nhiễm chéo liên tác nhân",
+        "explanation": "Hệ thống có nhiều AI cùng xử lý công việc. Nếu một tác nhân bị thao túng, chỉ thị độc hại có thể lan sang các tác nhân khác và làm gián đoạn quy trình.",
+        "likelihood": 4,
         "impact": 4,
-        "score": 4,
-        "severity": "Low",
-        "severityLabel": "Thấp",
+        "score": 16,
+        "severity": "High",
+        "severityLabel": "Cao",
         "recommendations": [
-          "Nên giới hạn quyền của từng AI.",
-          "Coi tin nhắn giữa các AI là thông tin chưa được kiểm chứng, phải kiểm tra trước khi làm theo.",
-          "Chuẩn bị cách tạm dừng nhanh một AI khi phát hiện nó hoạt động bất thường."
+          "Giới hạn quyền của từng AI theo đúng chức năng được giao.",
+          "Kiểm tra tính hợp lệ của mọi thông điệp trao đổi nội bộ giữa các tác nhân.",
+          "Thiết lập cơ chế tạm dừng nhanh tác nhân có dấu hiệu hoạt động bất thường."
         ],
         "adjustments": [
-          "Tăng mức độ vì ai cũng có thể dùng ứng dụng này.",
-          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_INTER_AGENT_VALIDATION, CTRL_SCOPED_DELEGATION): W_total = 75% → L_final = 1."
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài."
+        ]
+      },
+      {
+        "id": "ROUTING_BYPASS",
+        "title": "Thao túng luồng điều phối",
+        "explanation": "Tác nhân điều phối quyết định luồng đi của từng yêu cầu. Đầu vào được thiết kế tinh vi có thể khiến hệ thống bỏ qua bước kiểm duyệt và chuyển thẳng yêu cầu đến tác nhân thực thi.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Thiết lập cổng kiểm tra an toàn cố định mà tác nhân AI không thể bỏ qua.",
+          "Giới hạn điều phối trong danh sách luồng nghiệp vụ đã được định nghĩa sẵn."
+        ],
+        "adjustments": [
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài.",
+          "Áp dụng 1 kiểm soát kỹ thuật (CTRL_GUARDRAILS): giảm 35% → L = 3."
+        ]
+      },
+      {
+        "id": "POISONED_DOCS",
+        "title": "Chèn chỉ thị độc hại qua tài liệu tra cứu",
+        "explanation": "Hệ thống tra cứu tài liệu nội bộ để trả lời. Nếu tài liệu bị chèn nội dung điều hướng ẩn, AI có thể thực thi theo chỉ thị đó thay vì quy tắc gốc.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Kiểm soát chặt quyền thêm mới và chỉnh sửa tài liệu trong kho tri thức.",
+          "Rà soát và làm sạch nội dung tài liệu trước khi đưa vào hệ thống tra cứu."
+        ],
+        "adjustments": [
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài.",
+          "Áp dụng 1 kiểm soát kỹ thuật (CTRL_SYS_PROMPT_SEP): giảm 25% → L = 3."
+        ]
+      },
+      {
+        "id": "AI-03",
+        "title": "Rủi ro lệch hướng quyết định tự trị và lỗ hổng giám sát",
+        "explanation": "Với mức độ giám sát con người là partial trên cấu trúc đa tác nhân, sai lệch tích lũy hoặc thao tác chưa xác thực có thể làm thay đổi trạng thái hệ thống ngoài ý muốn.",
+        "likelihood": 3,
+        "impact": 4,
+        "score": 12,
+        "severity": "High",
+        "severityLabel": "Cao",
+        "recommendations": [
+          "Thiết lập cổng kiểm tra chính sách cố định trước mọi thao tác làm thay đổi dữ liệu hoặc trạng thái.",
+          "Lưu nhật ký bất biến cho toàn bộ các bước suy luận và chuyển giao tác vụ giữa các tác nhân."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "PRIVILEGE_ESCALATION",
+        "title": "Leo thang đặc quyền qua phân công tác vụ",
+        "explanation": "Tác nhân điều phối có thể bị điều hướng để chuyển yêu cầu sang một tác nhân khác có quyền hạn cao hơn, dẫn đến thực thi thao tác vượt thẩm quyền.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Giới hạn quyền của từng AI ở mức tối thiểu cần thiết.",
+          "Yêu cầu mỗi tác nhân tự xác thực quyền truy cập thay vì phụ thuộc hoàn toàn vào tác nhân điều phối.",
+          "Không cho phép tác nhân điều phối tự cấp thêm quyền cho tác nhân con."
+        ],
+        "adjustments": [
+          "Giảm một phần rủi ro do các tác vụ quan trọng có bước phê duyệt."
+        ]
+      },
+      {
+        "id": "TOOL_HIJACK",
+        "title": "Thực thi công cụ ngoài ý muốn",
+        "explanation": "Khi AI có quyền tự gọi công cụ hoặc thao tác dữ liệu, đầu vào độc hại có thể điều hướng hệ thống thực hiện tác vụ ngoài phạm vi cho phép.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Chỉ cấp quyền truy cập tối thiểu đối với các công cụ thực sự cần thiết.",
+          "Yêu cầu phê duyệt thủ công đối với các tác vụ quan trọng như thanh toán, xóa dữ liệu hoặc gửi thư ra ngoài.",
+          "Thiết lập hạn mức tần suất và giá trị cho từng loại thao tác."
+        ],
+        "adjustments": [
+          "Giảm một phần rủi ro do các tác vụ quan trọng có bước phê duyệt.",
+          "Tăng khả năng xảy ra do hệ thống tiếp nhận dữ liệu từ tài liệu hoặc Internet.",
+          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_GUARDRAILS, CTRL_SYS_PROMPT_SEP): giảm 60% → L = 2."
+        ]
+      },
+      {
+        "id": "DOC_ACCESS_LEAK",
+        "title": "Truy xuất tài liệu vượt thẩm quyền",
+        "explanation": "Hệ thống có thể trích xuất nội dung từ các tài liệu nội bộ như bảng lương hoặc hợp đồng mật cho người dùng không có quyền xem.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Áp dụng phân quyền truy cập tài liệu theo đúng định danh của người gửi yêu cầu.",
+          "Tách biệt kho tài liệu mật khỏi nguồn dữ liệu tra cứu chung."
+        ],
+        "adjustments": [
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài.",
+          "Tăng mức độ ảnh hưởng do hệ thống xử lý dữ liệu nhạy cảm.",
+          "Áp dụng 1 kiểm soát kỹ thuật (CTRL_RAG_ACL): giảm 45% → L = 2."
+        ]
+      },
+      {
+        "id": "EXCESSIVE_AGENCY",
+        "title": "Cấp quyền quá mức cho công cụ tích hợp",
+        "explanation": "Hệ thống được kết nối với email, lịch hoặc cổng thanh toán với quyền hạn rộng có thể gây thiệt hại thực tế nếu phát sinh lỗi xử lý.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Áp dụng nguyên tắc đặc quyền tối thiểu, ví dụ chỉ cấp quyền đọc thay vì quyền xóa.",
+          "Sử dụng tài khoản dịch vụ riêng biệt thay vì tài khoản quản trị hệ thống.",
+          "Thiết lập hạn mức đối với các thao tác liên quan đến tài chính."
+        ],
+        "adjustments": [
+          "Giảm một phần rủi ro do các tác vụ quan trọng có bước phê duyệt."
+        ]
+      },
+      {
+        "id": "AI-01",
+        "title": "Thao túng ngữ cảnh theo kịch bản vận hành",
+        "explanation": "Trong kịch bản vận hành của Multi-Agent Enterprise Assistant (Primary: HIERARCHICAL; Composite: [HIERARCHICAL, REACT, HUMAN_IN_THE_LOOP]), dữ liệu đầu vào bất thường qua nhiều lượt tương tác có thể làm lệch mục tiêu xử lý và vượt qua ràng buộc nghiệp vụ.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Tách biệt dữ liệu đầu vào trong kịch bản khỏi chỉ thị hệ thống bằng cấu trúc phân cách rõ ràng.",
+          "Kiểm tra tính hợp lệ của trạng thái nghiệp vụ tại từng bước chuyển tiếp trong quy trình."
+        ],
+        "adjustments": [
+          "Áp dụng 2 kiểm soát (CTRL_SYS_PROMPT_SEP, CTRL_GUARDRAILS): giảm 60% → L = 2."
+        ]
+      },
+      {
+        "id": "AI-02",
+        "title": "Rủi ro chuỗi liên kết dữ liệu và công cụ liên thành phần",
+        "explanation": "Sự kết hợp giữa mô hình đa tác nhân phân cấp nhiều tầng và tài nguyên tích hợp (internal_docs, external_tools, company_data) tạo ra đường dẫn liên hoàn, cho phép dữ liệu truy xuất không tin cậy kích hoạt công cụ hoặc làm lộ bản ghi nhạy cảm.",
+        "likelihood": 2,
+        "impact": 5,
+        "score": 10,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Áp dụng kiểm tra tham số chặt chẽ và giới hạn đặc quyền tối thiểu giữa bước tra cứu và bước gọi công cụ.",
+          "Che dấu trường dữ liệu nhạy cảm trước khi chuyển bản ghi sang công cụ hoặc tác nhân kế tiếp."
+        ],
+        "adjustments": [
+          "Áp dụng 1 kiểm soát (CTRL_RAG_ACL): giảm 45% → L = 2."
+        ]
+      },
+      {
+        "id": "RUNAWAY_LOOP",
+        "title": "Vòng lặp thực thi không giới hạn",
+        "explanation": "Hệ thống tự lặp lại quá trình suy luận và gọi công cụ khi gặp tình huống bất thường, gây tiêu hao tài nguyên và làm chậm dịch vụ.",
+        "likelihood": 3,
+        "impact": 3,
+        "score": 9,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Giới hạn số bước thực thi tối đa và thời gian chờ cho mỗi yêu cầu.",
+          "Thiết lập hạn mức chi phí theo ngày và cảnh báo khi vượt ngưỡng."
+        ],
+        "adjustments": []
+      },
+      {
+        "id": "PROMPT_INJECTION",
+        "title": "Thao túng chỉ thị đầu vào",
+        "explanation": "Người dùng có thể nhập nội dung được cấu trúc chủ đích nhằm vượt qua quy tắc kiểm soát, buộc hệ thống phản hồi trái phép hoặc tiết lộ cấu hình nội bộ.",
+        "likelihood": 2,
+        "impact": 3,
+        "score": 6,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Áp dụng bộ lọc kiểm duyệt đầu vào và đầu ra trước khi hiển thị kết quả.",
+          "Thực hiện kiểm thử với các mẫu câu vượt rào phổ biến trước khi vận hành.",
+          "Không lưu trữ mật khẩu hoặc khóa bí mật trong chỉ thị hệ thống."
+        ],
+        "adjustments": [
+          "Tăng khả năng xảy ra do hệ thống mở cho người dùng bên ngoài.",
+          "Áp dụng 2 kiểm soát kỹ thuật (CTRL_SYS_PROMPT_SEP, CTRL_GUARDRAILS): giảm 60% → L = 2."
+        ]
+      },
+      {
+        "id": "MISINFORMATION",
+        "title": "Phản hồi thông tin thiếu chính xác",
+        "explanation": "Mô hình có thể tạo ra thông tin sai lệch nhưng có văn phong thuyết phục, dẫn đến sai sót nếu người dùng áp dụng trực tiếp mà không đối chiếu.",
+        "likelihood": 2,
+        "impact": 3,
+        "score": 6,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
+        "recommendations": [
+          "Gắn nhãn rõ ràng đối với các nội dung do hệ thống AI tự động tạo ra.",
+          "Yêu cầu trích dẫn nguồn dữ liệu gốc đối với các thông tin quan trọng."
+        ],
+        "adjustments": [
+          "Áp dụng 1 kiểm soát kỹ thuật (CTRL_GUARDRAILS): giảm 35% → L = 2."
         ]
       },
       {
         "id": "APPROVAL_FATIGUE",
-        "title": "Duyệt cho có",
-        "explanation": "Việc có người bấm \"Đồng ý\" giúp giảm rủi ro rất nhiều. Tuy nhiên nếu phải duyệt quá nhiều, người duyệt dễ bấm theo thói quen mà không đọc kỹ.",
-        "likelihood": 2,
+        "title": "Giảm hiệu quả phê duyệt thủ công",
+        "explanation": "Cơ chế chờ người phê duyệt giúp giảm rủi ro tự động hóa, nhưng nếu số lượng yêu cầu quá lớn, người duyệt dễ xác nhận theo quán tính mà không kiểm tra kỹ.",
+        "likelihood": 3,
         "impact": 2,
-        "score": 4,
-        "severity": "Low",
-        "severityLabel": "Thấp",
+        "score": 6,
+        "severity": "Medium",
+        "severityLabel": "Trung bình",
         "recommendations": [
-          "Chỉ yêu cầu duyệt với những hành động quan trọng.",
-          "Hiển thị rõ AI sắp làm gì, gửi cho ai, bao nhiêu tiền trước khi bấm \"Đồng ý\"."
+          "Chỉ yêu cầu phê duyệt thủ công đối với các tác vụ có mức độ ảnh hưởng cao.",
+          "Hiển thị tóm tắt rõ nội dung thao tác, đối tượng nhận và phạm vi tác động trên màn hình duyệt."
         ],
-        "adjustments": [
-          "Áp dụng 1 kiểm soát kỹ thuật (CTRL_DETERMINISTIC_ROUTER): W_total = 35% → L_final = 2."
-        ]
+        "adjustments": []
       }
     ],
-    "assessment_id": "c88da7d3c692",
-    "created_at": "2026-11-14T17:35:31+00:00"
+    "assessment_id": "07bc9548dd8e",
+    "created_at": "2026-11-15T07:39:48+00:00"
   }
 ]
